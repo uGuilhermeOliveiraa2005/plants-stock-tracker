@@ -1,27 +1,18 @@
+/* Reset básico e tema escuro */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --background-color: #111827;
+  --card-color: #1f2937;
+  --card-border-color: #374151;
+  --text-color: #f3f4f6;
+  --text-color-secondary: #9ca3af;
+  --accent-color: #34d399;
+  --accent-color-rgb: 52, 211, 153;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* --- 1. NOVAS CORES DE RARIDADE --- */
+  --rarity-tier1-color: #facc15; /* Amarelo */
+  --rarity-tier1-color-rgb: 250, 204, 21;
+  --rarity-tier2-color: #f3f4f6; /* Branco */
+  --rarity-tier2-color-rgb: 243, 244, 246;
 }
 
 * {
@@ -30,13 +21,639 @@ body {
   margin: 0;
 }
 
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
 a {
   color: inherit;
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+/* --- Container principal --- */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  transition: padding 0.3s ease;
+}
+
+/* --- Cabeçalho --- */
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  transition: font-size 0.3s ease;
+}
+.header p {
+  font-size: 1.1rem;
+  color: var(--text-color-secondary);
+}
+
+/* --- Seção do Cronômetro --- */
+.timer-section {
+  background-color: var(--card-color);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2.5rem;
+  border: 1px solid var(--card-border-color);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.timer-section h2 {
+  color: var(--text-color-secondary);
+  font-size: 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+.timer-countdown {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  line-height: 1;
+}
+.progress-bar-outer {
+  width: 100%;
+  height: 10px;
+  background-color: #374151;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+.progress-bar-inner {
+  height: 100%;
+  background-color: var(--accent-color);
+  border-radius: 5px;
+  transition: width 0.5s linear;
+}
+
+/* --- Título da Seção --- */
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--card-border-color);
+  padding-bottom: 0.5rem;
+  transition: font-size 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.section-title svg {
+  stroke: var(--accent-color);
+  flex-shrink: 0;
+  position: relative;
+  top: -1px;
+}
+
+/* --- Grid de Cards --- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+  transition: gap 0.3s ease;
+}
+
+/* --- Card Individual (Base) --- */
+.card {
+  background-color: var(--card-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+  /* Borda PADRÃO (cinza) */
+  border: 1px solid var(--card-border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, 
+              box-shadow 0.3s ease, 
+              border-color 0.3s ease;
+}
+
+/* --- Efeito Hover (Padrão) --- */
+.card:hover {
+  transform: translateY(-8px);
+  /* Borda PADRÃO no hover (verde) */
+  border-color: rgba(var(--accent-color-rgb), 0.7);
+  box-shadow: 0 12px 40px rgba(var(--accent-color-rgb), 0.15);
+}
+
+/* --- 2. NOVOS ESTILOS DE RARIDADE --- */
+
+/* Tier 2 (Branco) */
+.card-rarity-tier2 {
+  border-color: var(--rarity-tier2-color);
+}
+.card-rarity-tier2:hover {
+  border-color: var(--rarity-tier2-color); /* Mantém branco */
+  box-shadow: 0 12px 40px rgba(var(--rarity-tier2-color-rgb), 0.2); /* Glow branco */
+}
+
+/* Tier 1 (Amarelo) */
+.card-rarity-tier1 {
+  border-color: var(--rarity-tier1-color);
+}
+.card-rarity-tier1:hover {
+  border-color: var(--rarity-tier1-color); /* Mantém amarelo */
+  box-shadow: 0 12px 40px rgba(var(--rarity-tier1-color-rgb), 0.25); /* Glow amarelo */
+}
+/* --- FIM DOS NOVOS ESTILOS --- */
+
+
+/* --- Moldura da Imagem --- */
+.card-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1rem;
+  height: 90px;
+  width: 90px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #2d3748, #1a202c);
+  padding: 8px; 
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Imagem --- */
+.card-icon-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+  transition: transform 0.3s ease-in-out;
+}
+.card:hover .card-icon-wrapper img {
+  transform: scale(1.1) rotate(4deg);
+}
+
+/* --- Texto do Card --- */
+.card-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-qty {
+  font-size: 1rem;
+  color: var(--text-color-secondary);
+  font-weight: 500;
+}
+
+/* --- Mensagens de "Vazio" --- */
+.message {
+  color: var(--text-color-secondary);
+  font-size: 1.1rem;
+  text-align: center;
+  padding: 2rem;
+  background-color: var(--card-color);
+  border-radius: 12px;
+  border: 1px solid var(--card-border-color);
+}
+
+
+/* --- RESPONSIVIDADE (MOBILE) --- */
+@media (max-width: 640px) {
+  .container {
+    padding: 1rem;
+  }
+  .header h1 {
+    font-size: 2rem;
+  }
+  .section-title {
+    font-size: 1.5rem;
+  }
+  .card-grid {
+    gap: 1rem;
+  }
+  .card {
+    padding: 1rem;
+  }
+  .card-icon-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+/* --- NAVEGAÇÃO (MENU) --- */
+main {
+  padding-top: 80px; 
+}
+
+.navbar {
+  width: 100%;
+  height: 70px;
+  background-color: var(--card-color);
+  border-bottom: 1px solid var(--card-border-color);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.nav-content {
+  max-width: 1200px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-color);
+}
+.nav-link.active {
+  background-color: rgba(var(--accent-color-rgb), 0.1);
+  color: var(--accent-color);
+}
+
+/* --- PÁGINA "LAST SEEN" --- */
+.list-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: var(--card-color);
+  border-radius: 12px;
+  border: 1px solid var(--card-border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--card-border-color);
+  transition: background-color 0.2s ease;
+}
+.list-item:last-child {
+  border-bottom: none;
+}
+.list-item:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.list-item-image {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1.5rem;
+}
+.list-item-image img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.list-item-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-grow: 1;
+  gap: 1rem;
+}
+.list-item-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+.list-item-time {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  flex-shrink: 0;
+}
+
+section + section {
+  margin-top: 2.5rem;
+}
+
+/* --- AJUSTES MOBILE (NAV E LISTA) --- */
+@media (max-width: 640px) {
+  main {
+    padding-top: 60px;
+  }
+  .navbar {
+    height: 60px;
+  }
+  .nav-content {
+    padding: 0 1rem;
+  }
+  .nav-logo {
+    font-size: 1.25rem;
+  }
+  .nav-link span {
+    display: none;
+  }
+  .nav-link {
+    padding: 0.5rem;
+  }
+  .nav-link svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .list-item {
+    padding: 0.75rem 1rem;
+  }
+  .list-item-image {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+  }
+  .list-item-image img {
+    width: 30px;
+    height: 30px;
+  }
+  .list-item-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+  .list-item-name {
+    font-size: 1rem;
+  }
+  .list-item-time {
+    font-size: 0.9rem;
+  }
+}
+
+/* =========================================
+✨ ESTILOS DO BOTÃO DE NOTIFICAÇÃO (NAVBAR) ✨
+=========================================
+*/
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Espaço entre links e botão de sino */
+}
+
+/* Botão de ícone (Sino) */
+.nav-icon-btn {
+  background-color: transparent;
+  border: none;
+  color: var(--text-color-secondary);
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-icon-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-color);
+}
+
+/* Ajuste mobile: Oculta o texto do nav-link e ajusta o botão */
+@media (max-width: 640px) {
+  .nav-controls {
+    gap: 0.25rem;
+  }
+  .nav-link span {
+    display: none;
+  }
+  .nav-icon-btn {
+    padding: 0.5rem;
+  }
+  .nav-icon-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* =========================================
+✨ ESTILOS DO MODAL DE NOTIFICAÇÃO ✨
+=========================================
+*/
+
+/* Fundo escuro */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Conteúdo do Modal */
+.modal-content {
+  background-color: var(--card-color);
+  border-radius: 12px;
+  border: 1px solid var(--card-border-color);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Para o header e body rolarem */
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--card-border-color);
+  flex-shrink: 0;
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.modal-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+.modal-desc {
+  font-size: 1rem;
+  color: var(--text-color-secondary);
+  padding: 1rem 1.5rem;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.modal-body {
+  overflow-y: auto; /* Apenas o corpo rola */
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.modal-subtitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--card-border-color);
+  padding-bottom: 0.5rem;
+}
+
+.modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: var(--text-color-secondary);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Lista de Itens */
+.modal-item-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Duas colunas */
+  gap: 0.75rem;
+}
+
+.modal-item {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.modal-item-image {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin-right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.modal-item-name {
+  flex-grow: 1;
+  font-weight: 500;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Checkbox customizado */
+.modal-item-checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--card-border-color);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s ease;
+}
+
+.checkbox-dot {
+  width: 12px;
+  height: 12px;
+  background-color: var(--accent-color);
+  border-radius: 50%;
+  transform: scale(0); /* Escondido por padrão */
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Estilo do item SELECIONADO */
+.modal-item.selected {
+  border-color: var(--accent-color);
+  background-color: rgba(var(--accent-color-rgb), 0.1);
+}
+.modal-item.selected .modal-item-checkbox {
+  border-color: var(--accent-color);
+}
+.modal-item.selected .checkbox-dot {
+  transform: scale(1); /* Aparece */
+}
+
+/* Responsividade do Modal */
+@media (max-width: 640px) {
+  .modal-item-list {
+    grid-template-columns: 1fr; /* Coluna única no mobile */
+  }
+  .modal-header h2 {
+    font-size: 1.25rem;
   }
 }
