@@ -7,11 +7,9 @@
   --text-color-secondary: #9ca3af;
   --accent-color: #34d399;
   --accent-color-rgb: 52, 211, 153;
-
-  /* --- 1. NOVAS CORES DE RARIDADE --- */
-  --rarity-tier1-color: #facc15; /* Amarelo */
+  --rarity-tier1-color: #facc15;
   --rarity-tier1-color-rgb: 250, 204, 21;
-  --rarity-tier2-color: #f3f4f6; /* Branco */
+  --rarity-tier2-color: #f3f4f6;
   --rarity-tier2-color-rgb: 243, 244, 246;
 }
 
@@ -34,7 +32,7 @@ a {
   text-decoration: none;
 }
 
-/* --- Container principal --- */
+/* Container principal */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -44,7 +42,7 @@ a {
   transition: padding 0.3s ease;
 }
 
-/* --- Cabeçalho --- */
+/* Cabeçalho */
 .header {
   text-align: center;
   margin-bottom: 2rem;
@@ -60,7 +58,7 @@ a {
   color: var(--text-color-secondary);
 }
 
-/* --- Seção do Cronômetro --- */
+/* Seção do Cronômetro */
 .timer-section {
   background-color: var(--card-color);
   border-radius: 12px;
@@ -98,7 +96,7 @@ a {
   transition: width 0.5s linear;
 }
 
-/* --- Título da Seção --- */
+/* Título da Seção */
 .section-title {
   font-size: 1.8rem;
   font-weight: 700;
@@ -117,7 +115,7 @@ a {
   top: -1px;
 }
 
-/* --- Grid de Cards --- */
+/* Grid de Cards */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -126,51 +124,41 @@ a {
   transition: gap 0.3s ease;
 }
 
-/* --- Card Individual (Base) --- */
+/* Card Individual (Base) */
 .card {
   background-color: var(--card-color);
   border-radius: 12px;
   padding: 1.25rem;
   text-align: center;
-  /* Borda PADRÃO (cinza) */
   border: 1px solid var(--card-border-color);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease, 
               box-shadow 0.3s ease, 
               border-color 0.3s ease;
 }
-
-/* --- Efeito Hover (Padrão) --- */
 .card:hover {
   transform: translateY(-8px);
-  /* Borda PADRÃO no hover (verde) */
   border-color: rgba(var(--accent-color-rgb), 0.7);
   box-shadow: 0 12px 40px rgba(var(--accent-color-rgb), 0.15);
 }
 
-/* --- 2. NOVOS ESTILOS DE RARIDADE --- */
-
-/* Tier 2 (Branco) */
+/* Estilos de Raridade */
 .card-rarity-tier2 {
   border-color: var(--rarity-tier2-color);
 }
 .card-rarity-tier2:hover {
-  border-color: var(--rarity-tier2-color); /* Mantém branco */
-  box-shadow: 0 12px 40px rgba(var(--rarity-tier2-color-rgb), 0.2); /* Glow branco */
+  border-color: var(--rarity-tier2-color);
+  box-shadow: 0 12px 40px rgba(var(--rarity-tier2-color-rgb), 0.2);
 }
-
-/* Tier 1 (Amarelo) */
 .card-rarity-tier1 {
   border-color: var(--rarity-tier1-color);
 }
 .card-rarity-tier1:hover {
-  border-color: var(--rarity-tier1-color); /* Mantém amarelo */
-  box-shadow: 0 12px 40px rgba(var(--rarity-tier1-color-rgb), 0.25); /* Glow amarelo */
+  border-color: var(--rarity-tier1-color);
+  box-shadow: 0 12px 40px rgba(var(--rarity-tier1-color-rgb), 0.25);
 }
-/* --- FIM DOS NOVOS ESTILOS --- */
 
-
-/* --- Moldura da Imagem --- */
+/* Moldura da Imagem */
 .card-icon-wrapper {
   display: flex;
   justify-content: center;
@@ -186,7 +174,7 @@ a {
   box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* --- Imagem --- */
+/* Imagem */
 .card-icon-wrapper img {
   width: 100%;
   height: 100%;
@@ -198,7 +186,7 @@ a {
   transform: scale(1.1) rotate(4deg);
 }
 
-/* --- Texto do Card --- */
+/* Texto do Card */
 .card-name {
   font-size: 1.15rem;
   font-weight: 600;
@@ -214,7 +202,7 @@ a {
   font-weight: 500;
 }
 
-/* --- Mensagens de "Vazio" --- */
+/* Mensagens de "Vazio" */
 .message {
   color: var(--text-color-secondary);
   font-size: 1.1rem;
@@ -225,8 +213,7 @@ a {
   border: 1px solid var(--card-border-color);
 }
 
-
-/* --- RESPONSIVIDADE (MOBILE) --- */
+/* RESPONSIVIDADE (MOBILE) */
 @media (max-width: 640px) {
   .container {
     padding: 1rem;
@@ -249,7 +236,7 @@ a {
   }
 }
 
-/* --- NAVEGAÇÃO (MENU) --- */
+/* NAVEGAÇÃO (MENU) */
 main {
   padding-top: 80px; 
 }
@@ -307,7 +294,7 @@ main {
   color: var(--accent-color);
 }
 
-/* --- PÁGINA "LAST SEEN" --- */
+/* PÁGINA "LAST SEEN" */
 .list-container {
   max-width: 800px;
   margin: 0 auto;
@@ -372,7 +359,7 @@ section + section {
   margin-top: 2.5rem;
 }
 
-/* --- AJUSTES MOBILE (NAV E LISTA) --- */
+/* AJUSTES MOBILE (NAV E LISTA) */
 @media (max-width: 640px) {
   main {
     padding-top: 60px;
@@ -422,238 +409,8 @@ section + section {
   }
 }
 
-/* =========================================
-✨ ESTILOS DO BOTÃO DE NOTIFICAÇÃO (NAVBAR) ✨
-=========================================
+/* --- REMOVENDO ESTILOS DO MODAL E BOTÃO --- */
+/*
+.nav-controls, .nav-icon-btn { ... }
+.modal-overlay, .modal-content, .modal-header, ... etc ...
 */
-.nav-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem; /* Espaço entre links e botão de sino */
-}
-
-/* Botão de ícone (Sino) */
-.nav-icon-btn {
-  background-color: transparent;
-  border: none;
-  color: var(--text-color-secondary);
-  padding: 0.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.nav-icon-btn:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: var(--text-color);
-}
-
-/* Ajuste mobile: Oculta o texto do nav-link e ajusta o botão */
-@media (max-width: 640px) {
-  .nav-controls {
-    gap: 0.25rem;
-  }
-  .nav-link span {
-    display: none;
-  }
-  .nav-icon-btn {
-    padding: 0.5rem;
-  }
-  .nav-icon-btn svg {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-/* =========================================
-✨ ESTILOS DO MODAL DE NOTIFICAÇÃO ✨
-=========================================
-*/
-
-/* Fundo escuro */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(5px);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-/* Conteúdo do Modal */
-.modal-content {
-  background-color: var(--card-color);
-  border-radius: 12px;
-  border: 1px solid var(--card-border-color);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Para o header e body rolarem */
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--card-border-color);
-  flex-shrink: 0;
-}
-
-.modal-header h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.modal-close-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-color-secondary);
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 50%;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-.modal-close-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-color);
-}
-
-.modal-desc {
-  font-size: 1rem;
-  color: var(--text-color-secondary);
-  padding: 1rem 1.5rem;
-  line-height: 1.5;
-  flex-shrink: 0;
-}
-
-.modal-body {
-  overflow-y: auto; /* Apenas o corpo rola */
-  padding: 0 1.5rem 1.5rem 1.5rem;
-}
-
-.modal-subtitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--accent-color);
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--card-border-color);
-  padding-bottom: 0.5rem;
-}
-
-.modal-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 3rem;
-  color: var(--text-color-secondary);
-}
-
-.spinner {
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Lista de Itens */
-.modal-item-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* Duas colunas */
-  gap: 0.75rem;
-}
-
-.modal-item {
-  display: flex;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  padding: 0.75rem;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-
-.modal-item-image {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  margin-right: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.modal-item-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.modal-item-name {
-  flex-grow: 1;
-  font-weight: 500;
-  color: var(--text-color);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Checkbox customizado */
-.modal-item-checkbox {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--card-border-color);
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.2s ease;
-}
-
-.checkbox-dot {
-  width: 12px;
-  height: 12px;
-  background-color: var(--accent-color);
-  border-radius: 50%;
-  transform: scale(0); /* Escondido por padrão */
-  transition: transform 0.2s ease-in-out;
-}
-
-/* Estilo do item SELECIONADO */
-.modal-item.selected {
-  border-color: var(--accent-color);
-  background-color: rgba(var(--accent-color-rgb), 0.1);
-}
-.modal-item.selected .modal-item-checkbox {
-  border-color: var(--accent-color);
-}
-.modal-item.selected .checkbox-dot {
-  transform: scale(1); /* Aparece */
-}
-
-/* Responsividade do Modal */
-@media (max-width: 640px) {
-  .modal-item-list {
-    grid-template-columns: 1fr; /* Coluna única no mobile */
-  }
-  .modal-header h2 {
-    font-size: 1.25rem;
-  }
-}
