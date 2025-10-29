@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-import Navbar from "@/components/Navbar";
-import NotificationManager from "@/components/NotificationManager";
+// Não precisamos mais do 'headers'
+// import { headers } from "next/headers"; 
+
+import Navbar from "@/components/Navbar"; // Mantemos o Navbar
+// import NotificationManager from "@/components/NotificationManager"; // REMOVIDO
+// import ErrorBoundary from "@/components/ErrorBoundary"; // REMOVIDO
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -12,17 +16,25 @@ export const metadata: Metadata = {
   description: "Monitoramento em tempo real do estoque do Plants vs Brainrots",
 };
 
+// Removemos 'async'
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode; 
 }>) {
+  
+  // Removemos a detecção de user-agent
+  // const userAgent = (await headers()).get("user-agent") || "";
+  // const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
+        {/* <ErrorBoundary> // REMOVIDO */}
           <Navbar />
-          <NotificationManager /> 
+          {/* <NotificationManager /> // REMOVIDO */}
           <main>{children}</main>
+        {/* </ErrorBoundary> */}
       </body>
     </html>
   );
