@@ -17,7 +17,8 @@ interface ApiResponse {
 }
 
 const NOTIFY_LIST_KEY = "pvbNotifyList";
-const LAST_NOTIFIED_KEY = "pvbLastNotified"; // Armazena quando foi a última notificação
+const NOTIFIED_STOCKS_KEY = "pvbNotifiedStocks"; // Histórico de estoques já notificados
+const MAX_HISTORY = 50; // Mantém apenas os últimos 50 estoques no histórico
 
 // Lista completa de sementes disponíveis
 const AVAILABLE_SEEDS = [
@@ -38,6 +39,41 @@ const AVAILABLE_SEEDS = [
   "Cactus",
 ];
 
+// Funções auxiliares para gerenciar o histórico de notificações
+const getNotifiedStocks = (): Set<string> => {
+  try {
+    const saved = localStorage.getItem(NOTIFIED_STOCKS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return new Set(parsed);
+    }
+  } catch (error) {
+    console.error("Erro ao carregar histórico de notificações:", error);
+  }
+  return new Set();
+};
+
+const addNotifiedStock = (stockKey: string): void => {
+  try {
+    const history = getNotifiedStocks();
+    history.add(stockKey);
+    
+    // Limita o tamanho do histórico
+    const historyArray = Array.from(history);
+    const trimmedHistory = historyArray.slice(-MAX_HISTORY);
+    
+    localStorage.setItem(NOTIFIED_STOCKS_KEY, JSON.stringify(trimmedHistory));
+    console.log("💾 Estoque adicionado ao histórico:", stockKey);
+  } catch (error) {
+    console.error("Erro ao salvar histórico:", error);
+  }
+};
+
+const wasAlreadyNotified = (stockKey: string): boolean => {
+  const history = getNotifiedStocks();
+  return history.has(stockKey);
+};
+
 export default function NotificationManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedFruits, setSelectedFruits] = useState<Set<string>>(new Set());
@@ -46,7 +82,6 @@ export default function NotificationManager() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastStockDataRef = useRef<string>("");
-  const hasNotifiedForCurrentStock = useRef<boolean>(false);
 
   // Carrega a lista salva do localStorage
   useEffect(() => {
@@ -81,7 +116,7 @@ export default function NotificationManager() {
         const data: ApiResponse = await response.json();
         const currentStockKey = `${data.reportedAt}`;
 
-        // Se é a mesma atualização, ignora
+        // Se é a mesma atualização que já estamos acompanhando, ignora
         if (currentStockKey === lastStockDataRef.current) {
           return;
         }
@@ -94,13 +129,10 @@ export default function NotificationManager() {
 
         // Atualiza o timestamp da última verificação
         lastStockDataRef.current = currentStockKey;
-        hasNotifiedForCurrentStock.current = false; // Reseta o flag de notificação
 
-        // Verifica no localStorage se já notificamos para este reportedAt
-        const lastNotified = localStorage.getItem(LAST_NOTIFIED_KEY);
-        if (lastNotified === currentStockKey) {
-          console.log("⏭️ Já notificamos para este estoque antes (via localStorage)");
-          hasNotifiedForCurrentStock.current = true;
+        // 🔑 VERIFICAÇÃO CRÍTICA: Já notificamos este estoque antes?
+        if (wasAlreadyNotified(currentStockKey)) {
+          console.log("⏭️ Este estoque JÁ foi notificado antes. Pulando notificação.");
           return;
         }
 
@@ -121,16 +153,14 @@ export default function NotificationManager() {
           }
         }
 
-        // Se encontrou algum match E ainda não notificou
-        if (matchedFruits.length > 0 && !hasNotifiedForCurrentStock.current) {
+        // Se encontrou algum match, notifica UMA ÚNICA VEZ
+        if (matchedFruits.length > 0) {
           console.log("🔔 Tocando notificação para:", matchedFruits);
           playNotificationSound();
           
-          // Marca como notificado
-          hasNotifiedForCurrentStock.current = true;
-          localStorage.setItem(LAST_NOTIFIED_KEY, currentStockKey);
-          console.log("💾 Salvou notificação no localStorage:", currentStockKey);
-        } else if (matchedFruits.length === 0) {
+          // 🔒 MARCA COMO NOTIFICADO PERMANENTEMENTE
+          addNotifiedStock(currentStockKey);
+        } else {
           console.log("❌ Nenhuma fruta selecionada encontrada no estoque");
         }
       } catch (error) {
