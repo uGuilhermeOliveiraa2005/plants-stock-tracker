@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
+import { headers } from "next/headers"; // Importação (correta)
+
 import Navbar from "@/components/Navbar";
-// 1. IMPORTAR O NOVO "CÉREBRO"
 import NotificationManager from "@/components/NotificationManager";
+// Vamos remover o ErrorBoundary, não precisamos mais dele
+// import ErrorBoundary from "@/components/ErrorBoundary"; 
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,18 +16,27 @@ export const metadata: Metadata = {
   description: "Monitoramento em tempo real do estoque do Plants vs Brainrots",
 };
 
-export default function RootLayout({
+// --- CORREÇÃO 1: Adicionado 'async' ---
+export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  // --- CORREÇÃO 2: 'Node' -> 'ReactNode' ---
+  children: React.ReactNode; 
 }>) {
+  
+  // DETECÇÃO NO LADO DO SERVIDOR
+  // --- CORREÇÃO 3: Adicionado 'await' ---
+  const userAgent = (await headers()).get("user-agent") || "";
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        <Navbar />
-        {/* 2. ADICIONAR O MANAGER (ele não renderiza nada) */}
-        <NotificationManager />
-        <main>{children}</main>
+        {/* <ErrorBoundary> // Removido */}
+          <Navbar />
+          <NotificationManager isIOS={isIOS} />
+          <main>{children}</main>
+        {/* </ErrorBoundary> */}
       </body>
     </html>
   );

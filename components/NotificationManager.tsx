@@ -4,11 +4,11 @@ import { useEffect, useRef } from "react";
 
 const STORAGE_KEY = "pvb-notif-items";
 
-export default function NotificationManager() {
+// 1. ACEITA A PROP "isIOS"
+export default function NotificationManager({ isIOS }: { isIOS: boolean }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const workerPortRef = useRef<MessagePort | null>(null);
+  const workerPortRef = useRef<Worker | MessagePort | null>(null);
 
-  // 1. Setup inicial (Roda uma vez)
   useEffect(() => {
     // Pede permissão para Notificações visuais
     if (Notification.permission === "default") {
@@ -21,7 +21,7 @@ export default function NotificationManager() {
     audioRef.current.load();
 
     // "Prime" do Áudio (Ouvinte de clique)
-    const primeAudio = () => {
+    const primeAudio = () => { /* ... (lógica igual, não precisa mexer) ... */
       if (audioRef.current) {
         audioRef.current.play()
           .then(() => {
@@ -39,60 +39,75 @@ export default function NotificationManager() {
     document.addEventListener("click", primeAudio);
     document.addEventListener("touchend", primeAudio);
 
-    // --- INICIA O *SHARED* WORKER ---
-    // <<<--- CORREÇÃO PRINCIPAL: Usa SharedWorker
-    if (typeof (SharedWorker) !== "undefined") {
-      // Conecta ao cérebro compartilhado
-      const worker = new SharedWorker("/notification.shared-worker.js");
-      workerPortRef.current = worker.port;
+    // --- 2. O "SWITCHER" INTELIGENTE ---
+    let workerInterface: Worker | SharedWorker;
+    let port: Worker | MessagePort;
+    let isShared = false;
 
-      // --- Ouve por mensagens vindas DO worker ---
-      worker.port.onmessage = (e) => {
-        const { type, payload } = e.data;
-        if (type === 'notify') {
-          // O cérebro mandou tocar, nós tocamos.
-          triggerNotification(payload);
-        }
-      };
-      // Inicia a porta de comunicação
-      worker.port.start();
-
-      // --- SINCRONIZA O LOCALSTORAGE COM O WORKER ---
-      
-      // 1. Função unificada para enviar a seleção para o cérebro
-      const updateWorkerSelection = () => {
-        const currentSelection = localStorage.getItem(STORAGE_KEY);
-        const selectionArray = currentSelection ? JSON.parse(currentSelection) : [];
-        
-        worker.port.postMessage({
-          type: 'updateSelection',
-          payload: selectionArray,
-        });
-      };
-      
-      // 2. Envia a seleção inicial (dispara o loop no worker)
-      updateWorkerSelection(); 
-    
-      // 3. Ouve por mudanças de *outras* abas
-      window.addEventListener('storage', updateWorkerSelection);
-
-      // 4. Ouve pelo *nosso* evento customizado (da mesma aba)
-      window.addEventListener('storage-update', updateWorkerSelection);
-
-      // --- Função de limpeza ---
-      return () => {
-        // Apenas fecha a *nossa* porta de comunicação
-        worker.port.close(); 
-        window.removeEventListener('storage', updateWorkerSelection);
-        window.removeEventListener('storage-update', updateWorkerSelection); 
-        document.removeEventListener("click", primeAudio);
-        document.removeEventListener("touchend", primeAudio);
-      };
+    if (isIOS) {
+      // É iOS? Usa o Worker padrão (Plano B)
+      console.log("iOS detectado pelo servidor. Usando Worker padrão.");
+      workerInterface = new Worker("/notification.worker.js");
+      port = workerInterface as Worker;
+      isShared = false;
     } else {
-      console.error("SharedWorker não é suportado neste navegador.");
-      return;
+      // Não é iOS? Tenta usar o SharedWorker "Premium" (Plano A)
+      try {
+        console.log("Não-iOS. Tentando SharedWorker 'Premium'.");
+        workerInterface = new SharedWorker("/notification.shared-worker.js");
+        port = (workerInterface as SharedWorker).port;
+        isShared = true;
+      } catch (e) {
+        // Se falhar (ex: navegador muito antigo), usa o Worker padrão
+        console.warn("SharedWorker falhou. Usando Worker padrão como fallback.", e);
+        workerInterface = new Worker("/notification.worker.js");
+        port = workerInterface as Worker;
+        isShared = false;
+      }
     }
-  }, []); // Roda só uma vez
+    // ------------------------------------
+
+    workerPortRef.current = port;
+
+    // Ouve por mensagens vindas DO worker
+    port.onmessage = (e: MessageEvent) => {
+      const { type, payload } = e.data;
+      if (type === 'notify') {
+        triggerNotification(payload);
+      }
+    };
+    
+    if (isShared) {
+      (port as MessagePort).start();
+    }
+
+    // Função unificada para enviar a seleção para o cérebro
+    const updateWorkerSelection = () => {
+      const currentSelection = localStorage.getItem(STORAGE_KEY);
+      const selectionArray = currentSelection ? JSON.parse(currentSelection) : [];
+      port.postMessage({
+        type: 'updateSelection',
+        payload: selectionArray,
+      });
+    };
+    
+    updateWorkerSelection(); 
+    window.addEventListener('storage', updateWorkerSelection);
+    window.addEventListener('storage-update', updateWorkerSelection);
+
+    // Função de limpeza
+    return () => {
+      if (isShared && port) {
+        (port as MessagePort).close(); 
+      } else if (!isShared && workerInterface) {
+        (workerInterface as Worker).terminate();
+      }
+      window.removeEventListener('storage', updateWorkerSelection);
+      window.removeEventListener('storage-update', updateWorkerSelection); 
+      document.removeEventListener("click", primeAudio);
+      document.removeEventListener("touchend", primeAudio);
+    };
+  }, [isIOS]); // Adiciona isIOS como dependência (para segurança)
 
   
   // Função que Toca o Som e Mostra a Notificação
@@ -101,16 +116,15 @@ export default function NotificationManager() {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(e => console.error("Erro ao tocar áudio:", e));
     }
-
     if (Notification.permission === "granted") {
       const title = "Item Desejado no Estoque!";
       const body = `Itens encontrados: ${matches.join(", ")}`;
       new Notification(title, {
         body: body,
-        icon: "/images/items/Mango-seed.webp", // Ícone de exemplo
+        icon: "/images/items/Mango-seed.webp",
       });
     }
   };
 
-  return null; // Não renderiza nada
+  return null;
 }
