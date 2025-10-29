@@ -62,7 +62,12 @@ export default function NotificationManager() {
 
   // Monitora mudanças no estoque
   useEffect(() => {
+    // SE não tiver áudio desbloqueado OU lista vazia, não faz nada
     if (!audioUnlocked || selectedFruits.size === 0) {
+      console.log("Notificações desabilitadas:", {
+        audioUnlocked,
+        listaVazia: selectedFruits.size === 0,
+      });
       return;
     }
 
@@ -82,20 +87,29 @@ export default function NotificationManager() {
         // Atualiza o timestamp da última verificação
         lastStockDataRef.current = currentStockKey;
 
-        // Verifica se alguma fruta selecionada está no estoque
-        const seedsInStock = new Set(data.seeds.map((seed) => seed.name));
-        let matchFound = false;
+        // CORREÇÃO: Verifica se alguma fruta selecionada está no estoque
+        const seedsInStock = data.seeds.map((seed) => seed.name);
+        const matchedFruits: string[] = [];
 
-        for (const fruit of selectedFruits) {
-          if (seedsInStock.has(fruit)) {
-            matchFound = true;
-            console.log(`Notificação! Fruta encontrada: ${fruit}`);
-            break;
+        console.log("Verificando estoque:", {
+          seedsNoEstoque: seedsInStock,
+          frutasSelecionadas: Array.from(selectedFruits),
+        });
+
+        // Para cada fruta SELECIONADA, verifica se está no estoque
+        for (const selectedFruit of selectedFruits) {
+          if (seedsInStock.includes(selectedFruit)) {
+            matchedFruits.push(selectedFruit);
+            console.log(`✅ Match encontrado: ${selectedFruit}`);
           }
         }
 
-        if (matchFound) {
+        // Se encontrou algum match, toca o som
+        if (matchedFruits.length > 0) {
+          console.log("🔔 Tocando notificação para:", matchedFruits);
           playNotificationSound();
+        } else {
+          console.log("❌ Nenhuma fruta selecionada encontrada no estoque");
         }
       } catch (error) {
         console.error("Erro ao verificar estoque:", error);
@@ -121,24 +135,24 @@ export default function NotificationManager() {
           audioRef.current!.currentTime = 0;
           setAudioUnlocked(true);
           setShowAudioBanner(false);
-          console.log("Áudio desbloqueado com sucesso!");
+          console.log("✅ Áudio desbloqueado com sucesso!");
         })
         .catch((e) => {
-          console.warn("Erro ao desbloquear áudio:", e);
+          console.warn("❌ Erro ao desbloquear áudio:", e);
         });
     }
   };
 
   const playNotificationSound = () => {
     if (!audioRef.current || !audioUnlocked) {
-      console.warn("Áudio não está pronto para tocar");
+      console.warn("⚠️ Áudio não está pronto para tocar");
       return;
     }
 
-    console.log("Tocando som de notificação...");
+    console.log("🔊 Tocando som de notificação...");
     audioRef.current.currentTime = 0;
     audioRef.current.play().catch((error) => {
-      console.warn("Não foi possível tocar o som:", error);
+      console.warn("❌ Não foi possível tocar o som:", error);
       setShowAudioBanner(true);
     });
   };
@@ -148,8 +162,10 @@ export default function NotificationManager() {
       const newSet = new Set(prev);
       if (newSet.has(fruitName)) {
         newSet.delete(fruitName);
+        console.log(`➖ Removido: ${fruitName}`);
       } else {
         newSet.add(fruitName);
+        console.log(`➕ Adicionado: ${fruitName}`);
       }
       return newSet;
     });
@@ -158,7 +174,7 @@ export default function NotificationManager() {
   const saveNotifications = () => {
     const listArray = Array.from(selectedFruits);
     localStorage.setItem(NOTIFY_LIST_KEY, JSON.stringify(listArray));
-    console.log("Lista salva:", listArray);
+    console.log("💾 Lista salva:", listArray);
 
     if (!audioUnlocked) {
       unlockAudio();
