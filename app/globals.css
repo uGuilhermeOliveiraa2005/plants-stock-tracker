@@ -269,6 +269,12 @@ main {
   color: var(--text-color);
 }
 
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .nav-links {
   display: flex;
   gap: 1rem;
@@ -359,7 +365,259 @@ section + section {
   margin-top: 2.5rem;
 }
 
-/* AJUSTES MOBILE (NAV E LISTA) */
+/* ========================================
+   ESTILOS DE NOTIFICAÇÃO
+   ======================================== */
+
+/* Banner de Áudio */
+.audio-banner {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  z-index: 9999;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  animation: slideDown 0.5s ease;
+}
+
+.audio-banner:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Botão de Ícone no Navbar */
+.nav-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border-color);
+  border-radius: 8px;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-icon-btn:hover {
+  background-color: rgba(var(--accent-color-rgb), 0.1);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: var(--card-color);
+  border-radius: 12px;
+  border: 1px solid var(--card-border-color);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Modal Header */
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--card-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-color);
+}
+
+/* Modal Body */
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.modal-description {
+  color: var(--text-color-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* Lista de Frutas */
+.fruit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fruit-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-color);
+  text-align: left;
+}
+
+.fruit-item img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.fruit-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(var(--accent-color-rgb), 0.5);
+}
+
+.fruit-item.selected {
+  background-color: rgba(var(--accent-color-rgb), 0.15);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.fruit-item.selected:hover {
+  background-color: rgba(var(--accent-color-rgb), 0.2);
+}
+
+/* Modal Footer */
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--card-border-color);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.625rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-primary {
+  background-color: var(--accent-color);
+  color: #111827;
+}
+
+.btn-primary:hover {
+  background-color: #2ec589;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--accent-color-rgb), 0.3);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--card-border-color);
+  color: var(--text-color-secondary);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--text-color-secondary);
+  color: var(--text-color);
+}
+
+/* AJUSTES MOBILE (NAV E LISTA + NOTIFICAÇÕES) */
 @media (max-width: 640px) {
   main {
     padding-top: 60px;
@@ -407,10 +665,32 @@ section + section {
   .list-item-time {
     font-size: 0.9rem;
   }
-}
 
-/* --- REMOVENDO ESTILOS DO MODAL E BOTÃO --- */
-/*
-.nav-controls, .nav-icon-btn { ... }
-.modal-overlay, .modal-content, .modal-header, ... etc ...
-*/
+  /* Ajustes do sistema de notificação no mobile */
+  .audio-banner {
+    top: 60px;
+    font-size: 0.9rem;
+    padding: 0.625rem 1.25rem;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 12px 12px 0 0;
+    max-height: 85vh;
+  }
+
+  .modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .fruit-item {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.95rem;
+  }
+
+  .fruit-item img {
+    width: 28px;
+    height: 28px;
+  }
+}
