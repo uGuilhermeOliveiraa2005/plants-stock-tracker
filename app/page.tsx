@@ -45,7 +45,7 @@ export default function HomePage() {
   const [totalDuration, setTotalDuration] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // --- Lógica de fetch (COM A CORREÇÃO DE ORDEM) ---
+  // --- Lógica de fetch (COM A CORREÇÃO DE ORDEM E BROADCAST) ---
   const fetchStockData = async () => {
     console.log("Buscando novos dados da API...");
     setIsLoading(true);
@@ -57,7 +57,6 @@ export default function HomePage() {
       const data: ApiResponse = await response.json();
 
       // --- 2. CORREÇÃO DA ORDEM (SORT) ---
-      // Ordena as sementes pela sua ORDEM PERSONALIZADA
       data.seeds.sort((a, b) => {
         let indexA = SEEDS_ORDER.indexOf(a.name);
         let indexB = SEEDS_ORDER.indexOf(b.name);
@@ -65,14 +64,26 @@ export default function HomePage() {
         if (indexB === -1) indexB = SEEDS_ORDER.length;
         return indexA - indexB;
       });
-
-      // Ordena os gears alfabeticamente para uma ordem estável
       data.gear.sort((a, b) => a.name.localeCompare(b.name));
       // --- FIM DA CORREÇÃO ---
 
       // Seta os dados JÁ ORDENADOS
       setApiData(data);
       
+      // +++ INÍCIO DA MODIFICAÇÃO (BROADCAST) +++
+      // --- PING PARA O NOTIFICATION MANAGER ---
+      // Avisa outros componentes (NotificationManager) que novos dados chegaram
+      // para que a notificação seja instantânea.
+      try {
+        const channel = new BroadcastChannel('stock-update-channel');
+        channel.postMessage({ reportedAt: data.reportedAt });
+        channel.close();
+      } catch (e) {
+        console.warn("Falha ao enviar broadcast message", e);
+      }
+      // +++ FIM DA MODIFICAÇÃO (BROADCAST) +++
+
+      // Seta os timers
       const duration = data.nextUpdateAt - data.reportedAt;
       setTotalDuration(duration);
       const now = Date.now();
@@ -95,9 +106,10 @@ export default function HomePage() {
     if (timeRemaining <= 0 && apiData) {
       const timer = setTimeout(() => {
         fetchStockData();
-      }, 2000);
+      }, 2000); // Pequeno delay para evitar múltiplas chamadas
       return () => clearTimeout(timer);
     }
+    
     const interval = setInterval(() => {
       if (apiData) {
         const now = Date.now();

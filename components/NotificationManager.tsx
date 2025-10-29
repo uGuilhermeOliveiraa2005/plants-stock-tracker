@@ -1,68 +1,53 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+// 1. Importar o useCallback
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 
-interface ShopItem {
-  name: string;
-  qty: number;
-  emoji: string;
-}
-
-interface ApiResponse {
-  reportedAt: number;
-  nextUpdateAt: number;
-  seeds: ShopItem[];
-  gear: ShopItem[];
-}
-
+// --- (Interfaces e Constantes - Sem alteração) ---
+interface ShopItem { name: string; qty: number; emoji: string; }
+interface ApiResponse { reportedAt: number; nextUpdateAt: number; seeds: ShopItem[]; gear: ShopItem[]; }
 const NOTIFY_LIST_KEY = "pvbNotifyList";
 const NOTIFIED_STOCKS_KEY = "pvbNotifiedStocks";
 const MAX_HISTORY = 50;
-
 const AVAILABLE_SEEDS = [
   "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot",
   "Carnivorous Plant", "Cocotank", "Grape", "Watermelon", "Eggplant",
   "Dragon Fruit", "Sunflower", "Pumpkin", "Strawberry", "Cactus",
 ];
 
-// --- Funções de Histórico (sem alteração nos logs) ---
-const getNotifiedStocks = (): Set<string> => { /* ... (código igual) ... */ 
+// --- (Funções de Histórico - Sem alteração) ---
+const getNotifiedStocks = (): Set<string> => {
   try {
     const saved = localStorage.getItem(NOTIFIED_STOCKS_KEY);
     if (saved) {
       const parsed = JSON.parse(saved) as string[];
-      console.log("📜 Histórico lido:", parsed);
+      // console.log("📜 Histórico lido:", parsed);
       return new Set(parsed);
     }
-  } catch (error) {
-    console.error("Erro ao carregar histórico:", error);
-  }
-  console.log("📜 Histórico não encontrado ou vazio.");
+  } catch (error) { console.error("Erro ao carregar histórico:", error); }
+  // console.log("📜 Histórico não encontrado ou vazio.");
   return new Set();
 };
-
-const addNotifiedStock = (stockKey: string): void => { /* ... (código igual) ... */ 
-  try {
+const addNotifiedStock = (stockKey: string): void => {
+   try {
     const historySet = getNotifiedStocks();
     historySet.add(stockKey);
     const historyArray = Array.from(historySet);
     const trimmedHistory = historyArray.slice(-MAX_HISTORY);
     localStorage.setItem(NOTIFIED_STOCKS_KEY, JSON.stringify(trimmedHistory));
     console.log("💾 Histórico salvo:", trimmedHistory);
-  } catch (error) {
-    console.error("Erro ao salvar histórico:", error);
-  }
+  } catch (error) { console.error("Erro ao salvar histórico:", error); }
 };
-
-const wasAlreadyNotified = (stockKey: string): boolean => { /* ... (código igual) ... */ 
+const wasAlreadyNotified = (stockKey: string): boolean => {
   const history = getNotifiedStocks();
   return history.has(stockKey);
 };
+// --- Fim das Funções de Histórico ---
+
 
 export default function NotificationManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // Mantemos o state para a UI do modal, mas não o usamos na lógica de checagem
   const [selectedFruitsState, setSelectedFruitsState] = useState<Set<string>>(new Set());
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showAudioBanner, setShowAudioBanner] = useState(true);
@@ -71,23 +56,27 @@ export default function NotificationManager() {
   const lastProcessedStockTimestamp = useRef<number>(0); 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Carrega a lista salva do localStorage PARA O STATE (para a UI)
+  // --- (useEffect de Setup Inicial - Sem alteração) ---
   useEffect(() => {
-    const savedList = localStorage.getItem(NOTIFY_LIST_KEY);
-    if (savedList) {
-      try {
+    // Tenta carregar a lista salva do localStorage PARA O STATE (para a UI)
+    try {
+      const savedList = localStorage.getItem(NOTIFY_LIST_KEY);
+      if (savedList) {
         const parsed = JSON.parse(savedList) as string[];
-        setSelectedFruitsState(new Set(parsed)); // Atualiza o state
+        setSelectedFruitsState(new Set(parsed)); 
         console.log("Lista de notificações (state) carregada:", parsed);
-      } catch (error) {
-        console.error("Erro ao carregar lista (state):", error);
       }
+    } catch (error) { 
+      console.error("Erro ao carregar lista (state):", error); 
     }
-    // (O resto do setup inicial igual)
-    audioRef.current = new Audio("/notification.wav"); /*...*/
+
+    // Configura o áudio
+    audioRef.current = new Audio("/notification.wav");
     audioRef.current.volume = 0.5;
     audioRef.current.load();
-    const primeAudio = () => { /* ... */ 
+
+    // Tenta desbloquear o áudio com a primeira interação
+    const primeAudio = () => {
         if (audioRef.current && !audioUnlocked) {
             audioRef.current.play().then(() => {
                 if(audioRef.current){ audioRef.current.pause(); audioRef.current.currentTime = 0;}
@@ -99,118 +88,202 @@ export default function NotificationManager() {
     if (!audioUnlocked) {
         document.addEventListener("click", primeAudio); document.addEventListener("touchend", primeAudio);
     } else { setShowAudioBanner(false); }
-    return () => { document.removeEventListener("click", primeAudio); document.removeEventListener("touchend", primeAudio); };
-  }, [audioUnlocked]);
+    
+    // Limpeza dos event listeners
+    return () => { 
+      document.removeEventListener("click", primeAudio); 
+      document.removeEventListener("touchend", primeAudio); 
+    };
+  }, [audioUnlocked]); // Depende apenas de 'audioUnlocked'
 
-  // Monitora mudanças no estoque (LÓGICA REFINADA)
+
+  // --- 2. FUNÇÃO DE SOM (Envolvida em useCallback) ---
+  const playNotificationSound = useCallback(() => {
+      if (!audioRef.current) return;
+      if (!audioUnlocked) { 
+          console.warn("⚠️ Áudio bloqueado"); 
+          setShowAudioBanner(true); 
+          return; 
+      }
+      console.log("🔊 Tocando..."); 
+      audioRef.current.currentTime = 0;
+      const playPromise = audioRef.current.play();
+      if (playPromise) { 
+          playPromise.then(() => console.log("✅ Som OK!"))
+                     .catch((error) => { 
+                         console.warn("❌ Falha Play:", error); 
+                         setAudioUnlocked(false); 
+                         setShowAudioBanner(true); 
+                     }); 
+      }
+  }, [audioUnlocked]); // Depende do state 'audioUnlocked'
+
+  
+  // --- 3. LÓGICA DE CHECAGEM (Movida para fora e envolvida em useCallback) ---
+  const checkStockChanges = useCallback(async () => {
+    try {
+      const response = await fetch("/api/stock");
+      if (!response.ok) { console.warn("Falha /api/stock"); return; }
+      const data: ApiResponse = await response.json();
+      const currentStockTimestamp = data.reportedAt;
+      const currentStockKey = String(currentStockTimestamp);
+
+      // CHECAGEM 1: JÁ PROCESSAMOS ESTE ESTOQUE?
+      // Usar o .current garante que lemos o valor mais recente do ref
+      if (currentStockTimestamp === lastProcessedStockTimestamp.current) {
+        // console.log(`Stock ${currentStockTimestamp} já processado.`);
+        return; 
+      }
+
+      // NOVO ESTOQUE
+      console.log("🆕 Novo estoque detectado!", { anterior: lastProcessedStockTimestamp.current, novo: currentStockTimestamp });
+      lastProcessedStockTimestamp.current = currentStockTimestamp; // Marca como processado
+
+      // CHECAGEM 2: JÁ NOTIFICAMOS ESTE ESTOQUE ANTES?
+      if (wasAlreadyNotified(currentStockKey)) {
+        console.log(`⏭️ Estoque ${currentStockKey} JÁ notificado anteriormente. Pulando.`);
+        return;
+      }
+      
+      // CHECAGEM 3: HÁ MATCH COM A SELEÇÃO *ATUAL*?
+      // Lê a seleção FRESCA do localStorage
+      let freshSelectedItems: Set<string>;
+      try {
+        const freshSavedList = localStorage.getItem(NOTIFY_LIST_KEY);
+        freshSelectedItems = new Set<string>(freshSavedList ? JSON.parse(freshSavedList) as string[] : []);
+      } catch (e) {
+        console.error("Erro ao ler lista fresca", e);
+        freshSelectedItems = new Set();
+      }
+
+      if (freshSelectedItems.size === 0) {
+          console.log("Seleção ficou vazia. Pulando match.");
+          return;
+      }
+
+      const seedsInStock = data.seeds.map((seed) => seed.name);
+      const matchedFruits: string[] = [];
+      for (const selectedFruit of freshSelectedItems) {
+        if (seedsInStock.includes(selectedFruit)) {
+          matchedFruits.push(selectedFruit);
+        }
+      }
+
+      // NOTIFICAR E MARCAR
+      if (matchedFruits.length > 0) {
+        console.log("🔔 Tocando notificação para:", matchedFruits);
+        playNotificationSound(); // Chama a função estável
+        addNotifiedStock(currentStockKey); // Marca como notificado
+      } else {
+        console.log("❌ Nenhuma fruta selecionada encontrada neste novo estoque.");
+      }
+    } catch (error) {
+      console.error("Erro ao verificar estoque:", error);
+    }
+  }, [playNotificationSound]); // Depende da função 'playNotificationSound'
+
+
+  // --- 4. useEffect DE MONITORAMENTO (TIMER DE 30s) ---
+  // (Este é o timer de segurança, caso o Broadcast falhe)
   useEffect(() => {
-    // --- LÊ A SELEÇÃO DO LOCALSTORAGE AQUI ---
-    const savedList = localStorage.getItem(NOTIFY_LIST_KEY);
-    const currentSelectedFruits = new Set<string>(savedList ? JSON.parse(savedList) as string[] : []);
+    // Lê a lista do storage para decidir se inicia o timer
+    let currentSelectedFruits: Set<string>;
+    try {
+      const savedList = localStorage.getItem(NOTIFY_LIST_KEY);
+      currentSelectedFruits = new Set<string>(savedList ? JSON.parse(savedList) as string[] : []);
+    } catch (e) {
+      currentSelectedFruits = new Set();
+    }
     
     // Se áudio bloqueado OU lista vazia, para tudo
     if (!audioUnlocked || currentSelectedFruits.size === 0) {
-      console.log("Notificações em espera:", { audioUnlocked, listaVazia: currentSelectedFruits.size === 0 });
+      console.log("Notificações em espera (Timer):", { audioUnlocked, listaVazia: currentSelectedFruits.size === 0 });
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
 
-    console.log("🚀 Iniciando/Reiniciando monitoramento de estoque...");
+    console.log("🚀 Iniciando/Reiniciando monitoramento de estoque (Timer 30s)...");
 
-    const checkStockChanges = async () => {
-      try {
-        const response = await fetch("/api/stock");
-        if (!response.ok) { console.warn("Falha /api/stock"); return; }
-        const data: ApiResponse = await response.json();
-        const currentStockTimestamp = data.reportedAt;
-        const currentStockKey = String(currentStockTimestamp);
-
-        // --- CHECAGEM 1: JÁ PROCESSAMOS ESTE ESTOQUE? ---
-        if (currentStockTimestamp === lastProcessedStockTimestamp.current) {
-          // console.log(`Stock ${currentStockTimestamp} já processado.`); // Log opcional (muito frequente)
-          return; 
-        }
-
-        // --- NOVO ESTOQUE ---
-        console.log("🆕 Novo estoque detectado!", { anterior: lastProcessedStockTimestamp.current, novo: currentStockTimestamp });
-        lastProcessedStockTimestamp.current = currentStockTimestamp; // Marca como processado
-
-        // --- CHECAGEM 2: JÁ NOTIFICAMOS ESTE ESTOQUE ANTES? ---
-        if (wasAlreadyNotified(currentStockKey)) {
-          console.log(`⏭️ Estoque ${currentStockKey} JÁ notificado anteriormente. Pulando.`);
-          return;
-        }
-        
-        // --- CHECAGEM 3: HÁ MATCH COM A SELEÇÃO *ATUAL*? ---
-        // Lê a seleção FRESCA do localStorage DENTRO da função
-        const freshSavedList = localStorage.getItem(NOTIFY_LIST_KEY);
-        const freshSelectedItems = new Set<string>(freshSavedList ? JSON.parse(freshSavedList) as string[] : []);
-
-        if (freshSelectedItems.size === 0) {
-            console.log("Seleção ficou vazia. Pulando match.");
-            return; // Sai se o usuário desmarcou tudo enquanto esperava
-        }
-
-        const seedsInStock = data.seeds.map((seed) => seed.name);
-        const matchedFruits: string[] = [];
-        for (const selectedFruit of freshSelectedItems) {
-          if (seedsInStock.includes(selectedFruit)) {
-            matchedFruits.push(selectedFruit);
-          }
-        }
-
-        // --- NOTIFICAR E MARCAR ---
-        if (matchedFruits.length > 0) {
-          console.log("🔔 Tocando notificação para:", matchedFruits);
-          playNotificationSound();
-          addNotifiedStock(currentStockKey); // Marca como notificado
-        } else {
-          console.log("❌ Nenhuma fruta selecionada encontrada neste novo estoque.");
-          // Não marca como notificado se não houve match
-        }
-      } catch (error) {
-        console.error("Erro ao verificar estoque:", error);
-      }
-    };
-
-    // Verifica imediatamente ao iniciar/reiniciar o monitoramento
+    // Verifica imediatamente ao (re)iniciar o monitoramento
     checkStockChanges(); 
     // Depois verifica a cada 30 segundos
     intervalRef.current = setInterval(checkStockChanges, 30000);
 
     // Função de limpeza do monitoramento
     return () => {
-        console.log("🛑 Parando monitoramento de estoque.");
+        console.log("🛑 Parando monitoramento de estoque (Timer 30s).");
         if (intervalRef.current) clearInterval(intervalRef.current);
     }
-  // Re-executa este efeito se o áudio for desbloqueado ou a SELEÇÃO DO STATE mudar
-  // A mudança no state (via modal) força o reinício do useEffect, que lê o localStorage atualizado
-  }, [audioUnlocked, selectedFruitsState]); 
+  // Re-executa se o áudio for desbloqueado, a seleção (state) mudar, ou a função de checagem for recriada
+  }, [audioUnlocked, selectedFruitsState, checkStockChanges]); 
 
-  // --- Funções de UI (Modal, Som, Salvar) ---
-  
-  const playNotificationSound = () => { /* ... (lógica igual) ... */ 
-      if (!audioRef.current) return;
-      if (!audioUnlocked) { console.warn("⚠️ Áudio bloqueado"); setShowAudioBanner(true); return; }
-      console.log("🔊 Tocando..."); audioRef.current.currentTime = 0;
-      const playPromise = audioRef.current.play();
-      if (playPromise) { playPromise.then(() => console.log("✅ Som OK!")).catch((error) => { console.warn("❌ Falha Play:", error); setAudioUnlocked(false); setShowAudioBanner(true); }); }
-  };
+
+  // --- 5. NOVO useEffect: Ouvinte do BroadcastChannel ---
+  // (Dispara a checagem IMEDIATAMENTE ao receber o "aviso" da page.tsx)
+  useEffect(() => {
+    // Só ouve se o áudio estiver desbloqueado
+    if (!audioUnlocked) {
+      console.log("Ouvinte Broadcast em espera (áudio bloqueado).");
+      return;
+    }
+
+    const channel = new BroadcastChannel('stock-update-channel');
+
+    const handleMessage = (event: MessageEvent) => {
+        console.log("🔔 Ping recebido do page.tsx!", event.data);
+        // Roda a checagem!
+        // A lógica de 'lastProcessedStockTimestamp.current' dentro dela
+        // garante que o estoque não seja processado duas vezes.
+        checkStockChanges();
+    };
+
+    console.log("🎧 Ouvindo o canal 'stock-update-channel'...");
+    channel.addEventListener('message', handleMessage);
+    
+    // Limpeza
+    return () => {
+        console.log("🔇 Parando de ouvir o canal 'stock-update-channel'.");
+        channel.removeEventListener('message', handleMessage);
+        channel.close();
+    };
+  }, [checkStockChanges, audioUnlocked]); // Depende da função e do estado do áudio
+
+
+  // --- (O restante das funções de UI - Sem alteração) ---
 
   // Atualiza o STATE E o localStorage
   const toggleFruitSelection = (fruitName: string) => { 
-    const currentSavedList = localStorage.getItem(NOTIFY_LIST_KEY);
-    const currentSelected = new Set<string>(currentSavedList ? JSON.parse(currentSavedList) as string[] : []);
+    // Lê a lista ATUAL do storage
+    let currentSelected: Set<string>;
+    try {
+      const currentSavedList = localStorage.getItem(NOTIFY_LIST_KEY);
+      currentSelected = new Set<string>(currentSavedList ? JSON.parse(currentSavedList) as string[] : []);
+    } catch (e) {
+      currentSelected = new Set();
+    }
 
+    // Modifica a lista
     if (currentSelected.has(fruitName)) {
         currentSelected.delete(fruitName);
     } else {
         currentSelected.add(fruitName);
     }
+
+    // Salva no storage e no state
     const listArray = Array.from(currentSelected);
-    localStorage.setItem(NOTIFY_LIST_KEY, JSON.stringify(listArray));
-    setSelectedFruitsState(currentSelected); // Atualiza o state para UI e para re-rodar o useEffect
-    console.log(`Seleção atualizada no storage e state:`, listArray);
+    try {
+      localStorage.setItem(NOTIFY_LIST_KEY, JSON.stringify(listArray));
+      setSelectedFruitsState(currentSelected); // Atualiza o state para UI e para re-rodar o useEffect de monitoramento
+      console.log(`Seleção atualizada no storage e state:`, listArray);
+    } catch (e) {
+      console.error("Erro ao salvar seleção", e);
+    }
+  };
+  
+  const primeAudioOnClick = () => { 
+    if (audioRef.current && !audioUnlocked) {
+         audioRef.current.play().then(() => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; } setAudioUnlocked(true); setShowAudioBanner(false); console.log("✅ Áudio desbloqueado ao salvar!"); }).catch(() => { console.warn("❌ Falha ao desbloquear ao salvar."); });
+      }
   };
 
   // Apenas fecha o modal e tenta desbloquear áudio
@@ -221,19 +294,13 @@ export default function NotificationManager() {
     }
     setIsModalOpen(false);
   };
-  
-  const primeAudioOnClick = () => { /* ... (lógica igual) ... */ 
-    if (audioRef.current && !audioUnlocked) {
-         audioRef.current.play().then(() => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; } setAudioUnlocked(true); setShowAudioBanner(false); console.log("✅ Áudio desbloqueado ao salvar!"); }).catch(() => { console.warn("❌ Falha ao desbloquear ao salvar."); });
-      }
-  };
 
-  const getImageSrc = (name: string): string => { /* ... (lógica igual) ... */ 
+  const getImageSrc = (name: string): string => {
       const formattedName = name.toLowerCase().replace(/ /g, "-");
       return `/images/items/${formattedName}-seed.webp`;
   };
 
-  // --- JSX (Renderização - Nenhuma mudança aqui) ---
+  // --- JSX (Renderização - Sem alteração) ---
   return (
     <>
       {showAudioBanner && !audioUnlocked && (
