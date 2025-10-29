@@ -694,3 +694,26 @@ section + section {
     height: 28px;
   }
 }
+
+/* Badge de notificação no ícone do sino */
+.nav-icon-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 2px solid var(--bg-primary, #1a1a1a);
+}

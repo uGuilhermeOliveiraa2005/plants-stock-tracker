@@ -17,6 +17,7 @@ interface ApiResponse {
 }
 
 const NOTIFY_LIST_KEY = "pvbNotifyList";
+const LAST_NOTIFIED_KEY = "pvbLastNotified"; // Armazena quando foi a última notificação
 
 // Lista completa de sementes disponíveis
 const AVAILABLE_SEEDS = [
@@ -45,6 +46,7 @@ export default function NotificationManager() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastStockDataRef = useRef<string>("");
+  const hasNotifiedForCurrentStock = useRef<boolean>(false);
 
   // Carrega a lista salva do localStorage
   useEffect(() => {
@@ -84,10 +86,25 @@ export default function NotificationManager() {
           return;
         }
 
+        // NOVO ESTOQUE DETECTADO!
+        console.log("🆕 Novo estoque detectado!", {
+          anterior: lastStockDataRef.current,
+          novo: currentStockKey,
+        });
+
         // Atualiza o timestamp da última verificação
         lastStockDataRef.current = currentStockKey;
+        hasNotifiedForCurrentStock.current = false; // Reseta o flag de notificação
 
-        // CORREÇÃO: Verifica se alguma fruta selecionada está no estoque
+        // Verifica no localStorage se já notificamos para este reportedAt
+        const lastNotified = localStorage.getItem(LAST_NOTIFIED_KEY);
+        if (lastNotified === currentStockKey) {
+          console.log("⏭️ Já notificamos para este estoque antes (via localStorage)");
+          hasNotifiedForCurrentStock.current = true;
+          return;
+        }
+
+        // Verifica se alguma fruta selecionada está no estoque
         const seedsInStock = data.seeds.map((seed) => seed.name);
         const matchedFruits: string[] = [];
 
@@ -104,11 +121,16 @@ export default function NotificationManager() {
           }
         }
 
-        // Se encontrou algum match, toca o som
-        if (matchedFruits.length > 0) {
+        // Se encontrou algum match E ainda não notificou
+        if (matchedFruits.length > 0 && !hasNotifiedForCurrentStock.current) {
           console.log("🔔 Tocando notificação para:", matchedFruits);
           playNotificationSound();
-        } else {
+          
+          // Marca como notificado
+          hasNotifiedForCurrentStock.current = true;
+          localStorage.setItem(LAST_NOTIFIED_KEY, currentStockKey);
+          console.log("💾 Salvou notificação no localStorage:", currentStockKey);
+        } else if (matchedFruits.length === 0) {
           console.log("❌ Nenhuma fruta selecionada encontrada no estoque");
         }
       } catch (error) {
@@ -151,10 +173,21 @@ export default function NotificationManager() {
 
     console.log("🔊 Tocando som de notificação...");
     audioRef.current.currentTime = 0;
-    audioRef.current.play().catch((error) => {
-      console.warn("❌ Não foi possível tocar o som:", error);
-      setShowAudioBanner(true);
-    });
+    
+    // Tenta tocar o áudio
+    const playPromise = audioRef.current.play();
+    
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log("✅ Som tocado com sucesso!");
+        })
+        .catch((error) => {
+          console.warn("❌ Não foi possível tocar o som:", error);
+          setShowAudioBanner(true);
+          setAudioUnlocked(false);
+        });
+    }
   };
 
   const toggleFruitSelection = (fruitName: string) => {
@@ -206,6 +239,9 @@ export default function NotificationManager() {
         aria-label="Configurar Notificações"
       >
         <Bell size={20} />
+        {selectedFruits.size > 0 && (
+          <span className="notification-badge">{selectedFruits.size}</span>
+        )}
       </button>
 
       {/* Modal de Seleção */}
