@@ -18,14 +18,14 @@ interface ApiResponse {
   gear: ShopItem[];
 }
 
-// --- 1. ORDEM PERSONALIZADA DE SEMENTES (A MESMA DA PÁGINA LAST-SEEN) ---
+// --- ORDEM PERSONALIZADA DE SEMENTES ---
 const SEEDS_ORDER: string[] = [
   "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot",
   "Carnivorous Plant", "Cocotank", "Grape", "Watermelon", "Eggplant",
   "Dragon Fruit", "Sunflower", "Pumpkin", "Strawberry", "Cactus",
 ];
 
-// --- Função de Classe de Raridade (Sem alteração) ---
+// --- Função de Classe de Raridade ---
 const getRarityClass = (name: string): string => {
   const tier1 = ["King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot"];
   if (tier1.includes(name)) {
@@ -44,11 +44,19 @@ export default function HomePage() {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [totalDuration, setTotalDuration] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // NOVO
 
-  // --- Lógica de fetch (COM A CORREÇÃO DE ORDEM E BROADCAST) ---
+  // --- Lógica de fetch ---
   const fetchStockData = async () => {
     console.log("Buscando novos dados da API...");
-    setIsLoading(true);
+    
+    // Se o tempo acabou, mostra estado de refresh ao invés de loading
+    if (timeRemaining <= 0 && apiData) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
+    
     try {
       const response = await fetch("/api/stock");
       if (!response.ok) {
@@ -56,7 +64,7 @@ export default function HomePage() {
       }
       const data: ApiResponse = await response.json();
 
-      // --- 2. CORREÇÃO DA ORDEM (SORT) ---
+      // Ordena as sementes
       data.seeds.sort((a, b) => {
         let indexA = SEEDS_ORDER.indexOf(a.name);
         let indexB = SEEDS_ORDER.indexOf(b.name);
@@ -65,15 +73,11 @@ export default function HomePage() {
         return indexA - indexB;
       });
       data.gear.sort((a, b) => a.name.localeCompare(b.name));
-      // --- FIM DA CORREÇÃO ---
 
-      // Seta os dados JÁ ORDENADOS
+      // Seta os dados ordenados
       setApiData(data);
       
-      // +++ INÍCIO DA MODIFICAÇÃO (BROADCAST) +++
-      // --- PING PARA O NOTIFICATION MANAGER ---
-      // Avisa outros componentes (NotificationManager) que novos dados chegaram
-      // para que a notificação seja instantânea.
+      // Broadcast para o NotificationManager
       try {
         const channel = new BroadcastChannel('stock-update-channel');
         channel.postMessage({ reportedAt: data.reportedAt });
@@ -81,7 +85,6 @@ export default function HomePage() {
       } catch (e) {
         console.warn("Falha ao enviar broadcast message", e);
       }
-      // +++ FIM DA MODIFICAÇÃO (BROADCAST) +++
 
       // Seta os timers
       const duration = data.nextUpdateAt - data.reportedAt;
@@ -93,23 +96,26 @@ export default function HomePage() {
       console.error(error);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false); // NOVO
     }
   };
 
-  // --- (O restante do arquivo não muda) ---
-
+  // Fetch inicial
   useEffect(() => {
     fetchStockData();
   }, []);
 
+  // Timer e auto-refresh
   useEffect(() => {
+    // Quando o tempo chega a zero, aguarda 2 segundos e busca novamente
     if (timeRemaining <= 0 && apiData) {
       const timer = setTimeout(() => {
         fetchStockData();
-      }, 2000); // Pequeno delay para evitar múltiplas chamadas
+      }, 2000);
       return () => clearTimeout(timer);
     }
     
+    // Atualiza o contador a cada segundo
     const interval = setInterval(() => {
       if (apiData) {
         const now = Date.now();
@@ -132,6 +138,9 @@ export default function HomePage() {
 
   const progressPercentage =
     totalDuration > 0 ? (timeRemaining / totalDuration) * 100 : 0;
+
+  // --- NOVO: Verifica se deve mostrar a mensagem de "verificando" ---
+  const showRefreshingMessage = isRefreshing || (timeRemaining <= 0 && !isLoading);
 
   // --- O que será renderizado (HTML/JSX) ---
   return (
@@ -157,97 +166,113 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Seção de Sementes (Seeds) */}
-      <section>
-        <h2 className="section-title">
-          <Sprout size={24} />
-          <span>Sementes (Seeds)</span>
-        </h2>
-        {isLoading && <div className="message">Carregando sementes...</div>}
-        {!isLoading && apiData && apiData.seeds.length > 0 && (
-          <div className="card-grid">
-            {apiData.seeds.map((seed) => { // Agora mapeia a lista ordenada
-              const imageName = `${seed.name
-                .toLowerCase()
-                .replace(/ /g, "-")}-seed.webp`;
-              const rarityClass = getRarityClass(seed.name);
+      {/* NOVO: Mensagem quando está verificando o estoque */}
+      {showRefreshingMessage && (
+        <div className="message" style={{ 
+          marginBottom: "2rem", 
+          fontSize: "1.2rem",
+          fontWeight: "600",
+          animation: "pulse 1.5s ease-in-out infinite"
+        }}>
+          🔄 Verificando novo estoque...
+        </div>
+      )}
 
-              return (
-                <div
-                  className={`card ${rarityClass}`}
-                  key={seed.name}
-                >
-                  <div className="card-icon-wrapper">
-                    <Image
-                      src={`/images/items/${imageName}`}
-                      alt={seed.name}
-                      width={80}
-                      height={80}
-                      priority
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "/images/items/Default.webp";
-                      }}
-                    />
+      {/* Seção de Sementes (Seeds) - Só mostra se NÃO estiver refreshing */}
+      {!showRefreshingMessage && (
+        <section>
+          <h2 className="section-title">
+            <Sprout size={24} />
+            <span>Sementes (Seeds)</span>
+          </h2>
+          {isLoading && <div className="message">Carregando sementes...</div>}
+          {!isLoading && apiData && apiData.seeds.length > 0 && (
+            <div className="card-grid">
+              {apiData.seeds.map((seed) => {
+                const imageName = `${seed.name
+                  .toLowerCase()
+                  .replace(/ /g, "-")}-seed.webp`;
+                const rarityClass = getRarityClass(seed.name);
+
+                return (
+                  <div
+                    className={`card ${rarityClass}`}
+                    key={seed.name}
+                  >
+                    <div className="card-icon-wrapper">
+                      <Image
+                        src={`/images/items/${imageName}`}
+                        alt={seed.name}
+                        width={80}
+                        height={80}
+                        priority
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "/images/items/Default.webp";
+                        }}
+                      />
+                    </div>
+                    <div className="card-name">{seed.name}</div>
+                    <div className="card-qty">Estoque: {seed.qty}</div>
                   </div>
-                  <div className="card-name">{seed.name}</div>
-                  <div className="card-qty">Estoque: {seed.qty}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {!isLoading && apiData && apiData.seeds.length === 0 && (
-          <div className="message">Nenhuma semente em estoque no momento.</div>
-        )}
-      </section>
+                );
+              })}
+            </div>
+          )}
+          {!isLoading && apiData && apiData.seeds.length === 0 && (
+            <div className="message">Nenhuma semente em estoque no momento.</div>
+          )}
+        </section>
+      )}
 
-      {/* Seção de Equipamentos (Gears) */}
-      <section>
-        <h2 className="section-title">
-          <Wrench size={24} />
-          <span>Equipamentos (Gears)</span>
-        </h2>
-        {isLoading && (
-          <div className="message">Carregando equipamentos...</div>
-        )}
-        {!isLoading && apiData && apiData.gear.length > 0 && (
-          <div className="card-grid">
-            {apiData.gear.map((gear) => { // Agora mapeia a lista ordenada
-              const imageName = `${gear.name
-                .toLowerCase()
-                .replace(/ /g, "-")}.webp`;
-              const rarityClass = getRarityClass(gear.name);
+      {/* Seção de Equipamentos (Gears) - Só mostra se NÃO estiver refreshing */}
+      {!showRefreshingMessage && (
+        <section>
+          <h2 className="section-title">
+            <Wrench size={24} />
+            <span>Equipamentos (Gears)</span>
+          </h2>
+          {isLoading && (
+            <div className="message">Carregando equipamentos...</div>
+          )}
+          {!isLoading && apiData && apiData.gear.length > 0 && (
+            <div className="card-grid">
+              {apiData.gear.map((gear) => {
+                const imageName = `${gear.name
+                  .toLowerCase()
+                  .replace(/ /g, "-")}.webp`;
+                const rarityClass = getRarityClass(gear.name);
 
-              return (
-                <div
-                  className={`card ${rarityClass}`}
-                  key={gear.name}
-                >
-                  <div className="card-icon-wrapper">
-                    <Image
-                      src={`/images/items/${imageName}`}
-                      alt={gear.name}
-                      width={80}
-                      height={80}
-                      priority
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "/images/items/Default.webp";
-                      }}
-                    />
+                return (
+                  <div
+                    className={`card ${rarityClass}`}
+                    key={gear.name}
+                  >
+                    <div className="card-icon-wrapper">
+                      <Image
+                        src={`/images/items/${imageName}`}
+                        alt={gear.name}
+                        width={80}
+                        height={80}
+                        priority
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "/images/items/Default.webp";
+                        }}
+                      />
+                    </div>
+                    <div className="card-name">{gear.name}</div>
+                    <div className="card-qty">Estoque: {gear.qty}</div>
                   </div>
-                  <div className="card-name">{gear.name}</div>
-                  <div className="card-qty">Estoque: {gear.qty}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {!isLoading && apiData && apiData.gear.length === 0 && (
-          <div className="message">Nenhum equipamento em estoque no momento.</div>
-        )}
-      </section>
+                );
+              })}
+            </div>
+          )}
+          {!isLoading && apiData && apiData.gear.length === 0 && (
+            <div className="message">Nenhum equipamento em estoque no momento.</div>
+          )}
+        </section>
+      )}
     </main>
   );
 }
