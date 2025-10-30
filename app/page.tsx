@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Sprout, Wrench } from "lucide-react";
+import { Sprout, Wrench, LoaderCircle } from "lucide-react"; // 💡 NOVO: LoaderCircle
 
 // --- (Tipos da API - Sem alteração) ---
 interface ShopItem {
@@ -166,15 +166,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* NOVO: Mensagem quando está verificando o estoque */}
+      {/* ✅ ALTERADO: Mensagem quando está verificando o estoque */}
       {showRefreshingMessage && (
         <div className="message" style={{ 
           marginBottom: "2rem", 
           fontSize: "1.2rem",
           fontWeight: "600",
-          animation: "pulse 1.5s ease-in-out infinite"
+          textAlign: "center", // Adicionado para responsividade/alinhamento central
+          // A animação 'pulse' está mantida, mas 'spin' foi adicionada ao ícone para ser mais fluida
         }}>
-          🔄 Verificando novo estoque...
+          {/* O ícone LoaderCircle gira com a classe "animate-spin" (necessita de Tailwind ou CSS customizado) */}
+          <LoaderCircle size={24} className="inline-block animate-spin mr-2" />
+          **Verificando novo estoque...**
         </div>
       )}
 
