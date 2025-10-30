@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Sprout, Wrench } from "lucide-react";
+import { Sprout, Wrench, RotateCw } from "lucide-react"; // Adicionado RotateCw
 
 // --- (Tipos da API - Sem alteração) ---
 interface ShopItem {
@@ -166,15 +166,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* NOVO: Mensagem quando está verificando o estoque */}
+      {/* NOVO: Mensagem quando está verificando o estoque (MODIFICADO) */}
       {showRefreshingMessage && (
-        <div className="message" style={{ 
-          marginBottom: "2rem", 
-          fontSize: "1.2rem",
-          fontWeight: "600",
-          animation: "pulse 1.5s ease-in-out infinite"
-        }}>
-          🔄 Verificando novo estoque...
+        <div className="message message-refreshing"> 
+          <RotateCw size={24} className="spin-slow" /> {/* Ícone e classe de animação */}
+          <span style={{ marginLeft: "0.5rem" }}>Verificando novo estoque...</span>
         </div>
       )}
 

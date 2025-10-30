@@ -717,3 +717,29 @@ section + section {
   padding: 2px;
   border: 2px solid var(--bg-primary, #1a1a1a);
 }
+
+/* Adicione esta regra de keyframes */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Aplique a animação ao ícone */
+.spin-slow {
+  animation: spin-slow 2s linear infinite; /* 2s de duração, linear, infinito */
+}
+
+/* Opcional: Estilo para a mensagem de refresh */
+.message-refreshing {
+  margin-bottom: 2rem; 
+  font-size: 1.2rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6; /* Exemplo de cor azul */
+}
