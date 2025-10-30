@@ -286,9 +286,31 @@ export default function NotificationManager() {
       }
   };
 
-  // Apenas fecha o modal e tenta desbloquear áudio
-  const saveNotifications = () => { 
+ // Salva as notificações e marca o estoque atual como "já processado"
+  const saveNotifications = async () => { 
     console.log("💾 Modal Salvo (storage já foi atualizado ao clicar).");
+    
+    // Marca o estoque atual como já processado para não notificar imediatamente
+    try {
+      const response = await fetch("/api/stock");
+      if (response.ok) {
+        const data: ApiResponse = await response.json();
+        const currentStockTimestamp = data.reportedAt;
+        const currentStockKey = String(currentStockTimestamp);
+        
+        // Adiciona o estoque atual ao histórico sem tocar som
+        if (!wasAlreadyNotified(currentStockKey)) {
+          addNotifiedStock(currentStockKey);
+          console.log("✅ Estoque atual marcado como processado (sem notificação):", currentStockKey);
+        }
+        
+        // Atualiza o ref para sincronizar
+        lastProcessedStockTimestamp.current = currentStockTimestamp;
+      }
+    } catch (error) {
+      console.error("Erro ao marcar estoque atual:", error);
+    }
+    
     if (!audioUnlocked) { 
       primeAudioOnClick(); 
     }
