@@ -213,15 +213,18 @@ export default function NotificationManager() {
         novo: currentStockTimestamp 
       });
 
-      // Atualiza o timestamp IMEDIATAMENTE
-      lastProcessedStockTimestamp.current = currentStockTimestamp;
-      setLastCheckTime(Date.now());
-
-      // Verifica se já foi notificado
+      // Verifica se já foi notificado ANTES de atualizar o timestamp
       if (wasAlreadyNotified(currentStockKey)) {
-        console.log(`⏭️ Stock ${currentStockKey} já foi notificado. Pulando som.`);
+        console.log(`⏭️ Stock ${currentStockKey} já foi notificado anteriormente. Pulando som.`);
+        // Atualiza o timestamp mesmo assim para não verificar novamente
+        lastProcessedStockTimestamp.current = currentStockTimestamp;
+        setLastCheckTime(Date.now());
         return;
       }
+
+      // Atualiza o timestamp e debounce
+      lastProcessedStockTimestamp.current = currentStockTimestamp;
+      setLastCheckTime(Date.now());
       
       // Pega lista atualizada do localStorage
       let freshSelectedItems: Set<string>;
@@ -237,6 +240,8 @@ export default function NotificationManager() {
 
       if (freshSelectedItems.size === 0) {
         console.log("ℹ️ Nenhuma fruta selecionada para notificação");
+        // Mesmo sem seleção, marca como processado para não verificar de novo
+        addNotifiedStock(currentStockKey);
         return;
       }
 
@@ -250,11 +255,11 @@ export default function NotificationManager() {
         }
       }
 
+      // Marca como notificado ANTES de tocar o som
+      addNotifiedStock(currentStockKey);
+
       if (matchedFruits.length > 0) {
         console.log("🎯 MATCH! Frutas encontradas:", matchedFruits);
-        
-        // Marca como notificado ANTES de tocar
-        addNotifiedStock(currentStockKey);
         
         // Toca o som
         playNotificationSound();
