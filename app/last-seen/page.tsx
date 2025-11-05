@@ -2,24 +2,23 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-// 1. IMPORTAR OS NOVOS ÍCONES
 import { Sprout, Wrench } from "lucide-react";
 
-// --- (Interface - Sem alteração) ---
 interface CleanItem {
   name: string;
   lastSeen: number;
 }
 
-// --- (Listas e Funções - Sem alteração) ---
+// Lista atualizada com Starfruit
 const SEEDS_LIST: string[] = [
-  "Carnivorous Plant", "Sunflower", "Pumpkin", "Strawberry", "Cactus",
+  "Starfruit", "Carnivorous Plant", "Sunflower", "Pumpkin", "Strawberry", "Cactus",
   "Dragon Fruit", "Tomatrio", "Eggplant", "Watermelon", "Grape",
   "Cocotank", "Mr Carrot", "Shroombino", "Mango", "King Limone",
 ];
 
+// Ordem atualizada com Starfruit no topo (mais rara)
 const SEEDS_ORDER: string[] = [
-  "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot",
+  "Starfruit", "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot",
   "Carnivorous Plant", "Cocotank", "Grape", "Watermelon", "Eggplant",
   "Dragon Fruit", "Sunflower", "Pumpkin", "Strawberry", "Cactus",
 ];
@@ -43,14 +42,12 @@ const getImageSrc = (name: string, type: "seed" | "gear"): string => {
   return `/images/items/${formattedName}.webp`;
 };
 
-// --- Componente da Página ---
 export default function LastSeenPage() {
   const [seeds, setSeeds] = useState<CleanItem[]>([]);
   const [gears, setGears] = useState<CleanItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [now, setNow] = useState<number>(Date.now());
 
-  // --- (Lógica de fetch e timers - Sem alteração) ---
   useEffect(() => {
     const fetchLastSeenData = async () => {
       setIsLoading(true);
@@ -93,7 +90,6 @@ export default function LastSeenPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // --- JSX ATUALIZADO ---
   return (
     <main className="container">
       <header className="header">
@@ -101,9 +97,7 @@ export default function LastSeenPage() {
         <p>A última vez que cada item apareceu na loja</p>
       </header>
 
-      {/* --- Seção de Sementes (Seeds) --- */}
       <section>
-        {/* --- 2. MUDANÇA NO H2 --- */}
         <h2 className="section-title">
           <Sprout size={24} />
           <span>Sementes (Seeds)</span>
@@ -143,9 +137,7 @@ export default function LastSeenPage() {
         )}
       </section>
 
-      {/* --- Seção de Equipamentos (Gears) --- */}
       <section>
-        {/* --- 3. MUDANÇA NO H2 --- */}
         <h2 className="section-title">
           <Wrench size={24} />
           <span>Equipamentos (Gears)</span>

@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Sprout, Wrench, RotateCw } from "lucide-react"; // Adicionado RotateCw
+import { Sprout, Wrench, RotateCw } from "lucide-react";
 
-// --- (Tipos da API - Sem alteração) ---
 interface ShopItem {
   name: string;
   qty: number;
@@ -18,19 +17,25 @@ interface ApiResponse {
   gear: ShopItem[];
 }
 
-// --- ORDEM PERSONALIZADA DE SEMENTES ---
+// Ordem atualizada com Starfruit no topo (mais rara)
 const SEEDS_ORDER: string[] = [
-  "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot",
+  "Starfruit", "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot",
   "Carnivorous Plant", "Cocotank", "Grape", "Watermelon", "Eggplant",
   "Dragon Fruit", "Sunflower", "Pumpkin", "Strawberry", "Cactus",
 ];
 
-// --- Função de Classe de Raridade ---
+// Função de raridade atualizada com Starfruit como tier 0 (mais rara)
 const getRarityClass = (name: string): string => {
+  // Tier 0 - Mais rara de todas
+  if (name === "Starfruit") {
+    return "card-rarity-tier0";
+  }
+  // Tier 1 - Raras
   const tier1 = ["King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot"];
   if (tier1.includes(name)) {
     return "card-rarity-tier1";
   }
+  // Tier 2 - Incomuns
   const tier2 = ["Carnivorous Plant", "Cocotank"];
   if (tier2.includes(name)) {
     return "card-rarity-tier2";
@@ -38,19 +43,16 @@ const getRarityClass = (name: string): string => {
   return "";
 };
 
-// --- Componente da Página ---
 export default function HomePage() {
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [totalDuration, setTotalDuration] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false); // NOVO
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  // --- Lógica de fetch ---
   const fetchStockData = async () => {
     console.log("Buscando novos dados da API...");
     
-    // Se o tempo acabou, mostra estado de refresh ao invés de loading
     if (timeRemaining <= 0 && apiData) {
       setIsRefreshing(true);
     } else {
@@ -64,7 +66,6 @@ export default function HomePage() {
       }
       const data: ApiResponse = await response.json();
 
-      // Ordena as sementes
       data.seeds.sort((a, b) => {
         let indexA = SEEDS_ORDER.indexOf(a.name);
         let indexB = SEEDS_ORDER.indexOf(b.name);
@@ -74,10 +75,8 @@ export default function HomePage() {
       });
       data.gear.sort((a, b) => a.name.localeCompare(b.name));
 
-      // Seta os dados ordenados
       setApiData(data);
       
-      // Broadcast para o NotificationManager
       try {
         const channel = new BroadcastChannel('stock-update-channel');
         channel.postMessage({ reportedAt: data.reportedAt });
@@ -86,7 +85,6 @@ export default function HomePage() {
         console.warn("Falha ao enviar broadcast message", e);
       }
 
-      // Seta os timers
       const duration = data.nextUpdateAt - data.reportedAt;
       setTotalDuration(duration);
       const now = Date.now();
@@ -96,18 +94,15 @@ export default function HomePage() {
       console.error(error);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false); // NOVO
+      setIsRefreshing(false);
     }
   };
 
-  // Fetch inicial
   useEffect(() => {
     fetchStockData();
   }, []);
 
-  // Timer e auto-refresh
   useEffect(() => {
-    // Quando o tempo chega a zero, aguarda 2 segundos e busca novamente
     if (timeRemaining <= 0 && apiData) {
       const timer = setTimeout(() => {
         fetchStockData();
@@ -115,7 +110,6 @@ export default function HomePage() {
       return () => clearTimeout(timer);
     }
     
-    // Atualiza o contador a cada segundo
     const interval = setInterval(() => {
       if (apiData) {
         const now = Date.now();
@@ -139,10 +133,8 @@ export default function HomePage() {
   const progressPercentage =
     totalDuration > 0 ? (timeRemaining / totalDuration) * 100 : 0;
 
-  // --- NOVO: Verifica se deve mostrar a mensagem de "verificando" ---
   const showRefreshingMessage = isRefreshing || (timeRemaining <= 0 && !isLoading);
 
-  // --- O que será renderizado (HTML/JSX) ---
   return (
     <main className="container">
       <header className="header">
@@ -150,7 +142,6 @@ export default function HomePage() {
         <p>Monitor de Estoque da Loja</p>
       </header>
 
-      {/* Seção do Cronômetro */}
       <section className="timer-section">
         <h2>Próxima atualização em:</h2>
         <div className="timer-countdown">
@@ -166,15 +157,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* NOVO: Mensagem quando está verificando o estoque (MODIFICADO) */}
       {showRefreshingMessage && (
         <div className="message message-refreshing"> 
-          <RotateCw size={24} className="spin-slow" /> {/* Ícone e classe de animação */}
+          <RotateCw size={24} className="spin-slow" />
           <span style={{ marginLeft: "0.5rem" }}>Verificando novo estoque...</span>
         </div>
       )}
 
-      {/* Seção de Sementes (Seeds) - Só mostra se NÃO estiver refreshing */}
       {!showRefreshingMessage && (
         <section>
           <h2 className="section-title">
@@ -221,7 +210,6 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Seção de Equipamentos (Gears) - Só mostra se NÃO estiver refreshing */}
       {!showRefreshingMessage && (
         <section>
           <h2 className="section-title">

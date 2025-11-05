@@ -7,8 +7,16 @@
   --text-color-secondary: #9ca3af;
   --accent-color: #34d399;
   --accent-color-rgb: 52, 211, 153;
+  
+  /* Tier 0 - Starfruit (Mítica/Mais Rara) */
+  --rarity-tier0-color: #ff00ff;
+  --rarity-tier0-color-rgb: 255, 0, 255;
+  
+  /* Tier 1 - Raras */
   --rarity-tier1-color: #facc15;
   --rarity-tier1-color-rgb: 250, 204, 21;
+  
+  /* Tier 2 - Incomuns */
   --rarity-tier2-color: #f3f4f6;
   --rarity-tier2-color-rgb: 243, 244, 246;
 }
@@ -143,6 +151,19 @@ a {
 }
 
 /* Estilos de Raridade */
+
+/* Tier 0 - Starfruit (Mítica) */
+.card-rarity-tier0 {
+  border-color: var(--rarity-tier0-color);
+  background: linear-gradient(135deg, rgba(255, 0, 255, 0.05) 0%, var(--card-color) 100%);
+}
+.card-rarity-tier0:hover {
+  border-color: var(--rarity-tier0-color);
+  box-shadow: 0 12px 40px rgba(var(--rarity-tier0-color-rgb), 0.35);
+  background: linear-gradient(135deg, rgba(255, 0, 255, 0.1) 0%, var(--card-color) 100%);
+}
+
+/* Tier 2 - Incomuns */
 .card-rarity-tier2 {
   border-color: var(--rarity-tier2-color);
 }
@@ -150,6 +171,8 @@ a {
   border-color: var(--rarity-tier2-color);
   box-shadow: 0 12px 40px rgba(var(--rarity-tier2-color-rgb), 0.2);
 }
+
+/* Tier 1 - Raras */
 .card-rarity-tier1 {
   border-color: var(--rarity-tier1-color);
 }
@@ -184,6 +207,20 @@ a {
 }
 .card:hover .card-icon-wrapper img {
   transform: scale(1.1) rotate(4deg);
+}
+
+/* Efeito especial para Starfruit */
+.card-rarity-tier0 .card-icon-wrapper img {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(255, 0, 255, 0.8)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+  }
 }
 
 /* Texto do Card */
@@ -730,7 +767,7 @@ section + section {
 
 /* Aplique a animação ao ícone */
 .spin-slow {
-  animation: spin-slow 2s linear infinite; /* 2s de duração, linear, infinito */
+  animation: spin-slow 2s linear infinite;
 }
 
 /* Opcional: Estilo para a mensagem de refresh */
@@ -741,5 +778,5 @@ section + section {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #3b82f6; /* Exemplo de cor azul */
+  color: #3b82f6;
 }
