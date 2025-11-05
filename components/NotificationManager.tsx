@@ -4,14 +4,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 
-// --- (Interfaces e Constantes - Sem alteração) ---
+// --- (Interfaces e Constantes - Com Starfruit adicionada) ---
 interface ShopItem { name: string; qty: number; emoji: string; }
 interface ApiResponse { reportedAt: number; nextUpdateAt: number; seeds: ShopItem[]; gear: ShopItem[]; }
 const NOTIFY_LIST_KEY = "pvbNotifyList";
 const NOTIFIED_STOCKS_KEY = "pvbNotifiedStocks";
 const MAX_HISTORY = 50;
 const AVAILABLE_SEEDS = [
-  "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot",
+  "Starfruit", "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot",
   "Carnivorous Plant", "Cocotank", "Grape", "Watermelon", "Eggplant",
   "Dragon Fruit", "Sunflower", "Pumpkin", "Strawberry", "Cactus",
 ];
@@ -22,11 +22,9 @@ const getNotifiedStocks = (): Set<string> => {
     const saved = localStorage.getItem(NOTIFIED_STOCKS_KEY);
     if (saved) {
       const parsed = JSON.parse(saved) as string[];
-      // console.log("📜 Histórico lido:", parsed);
       return new Set(parsed);
     }
   } catch (error) { console.error("Erro ao carregar histórico:", error); }
-  // console.log("📜 Histórico não encontrado ou vazio.");
   return new Set();
 };
 const addNotifiedStock = (stockKey: string): void => {
@@ -131,7 +129,6 @@ export default function NotificationManager() {
       // CHECAGEM 1: JÁ PROCESSAMOS ESTE ESTOQUE?
       // Usar o .current garante que lemos o valor mais recente do ref
       if (currentStockTimestamp === lastProcessedStockTimestamp.current) {
-        // console.log(`Stock ${currentStockTimestamp} já processado.`);
         return; 
       }
 

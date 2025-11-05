@@ -24,14 +24,10 @@ const SEEDS_ORDER: string[] = [
   "Dragon Fruit", "Sunflower", "Pumpkin", "Strawberry", "Cactus",
 ];
 
-// Função de raridade atualizada com Starfruit como tier 0 (mais rara)
+// Função de raridade atualizada com Starfruit no mesmo tier de King Limone
 const getRarityClass = (name: string): string => {
-  // Tier 0 - Mais rara de todas
-  if (name === "Starfruit") {
-    return "card-rarity-tier0";
-  }
-  // Tier 1 - Raras
-  const tier1 = ["King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot"];
+  // Tier 1 - Raras (incluindo Starfruit)
+  const tier1 = ["Starfruit", "King Limone", "Mango", "Shroombino", "Tomatrio", "Mr Carrot"];
   if (tier1.includes(name)) {
     return "card-rarity-tier1";
   }
