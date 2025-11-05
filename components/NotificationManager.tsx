@@ -1,6 +1,5 @@
 "use client";
 
-// 1. Importar o useCallback
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 
@@ -52,7 +51,6 @@ export default function NotificationManager() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastProcessedStockTimestamp = useRef<number>(0); 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- (useEffect de Setup Inicial - Sem alteração) ---
   useEffect(() => {
@@ -126,24 +124,24 @@ export default function NotificationManager() {
       const currentStockTimestamp = data.reportedAt;
       const currentStockKey = String(currentStockTimestamp);
 
-      // CHECAGEM 1: JÁ PROCESSAMOS ESTE ESTOQUE?
-      // Usar o .current garante que lemos o valor mais recente do ref
+      // CHECAGEM 1: JÁ PROCESSAMOS ESTE ESTOQUE NESTA ABA?
       if (currentStockTimestamp === lastProcessedStockTimestamp.current) {
+        console.log("⏭️ Estoque já processado nesta aba. Pulando.");
         return; 
       }
 
-      // NOVO ESTOQUE
-      console.log("🆕 Novo estoque detectado!", { anterior: lastProcessedStockTimestamp.current, novo: currentStockTimestamp });
-      lastProcessedStockTimestamp.current = currentStockTimestamp; // Marca como processado
-
-      // CHECAGEM 2: JÁ NOTIFICAMOS ESTE ESTOQUE ANTES?
+      // CHECAGEM 2: JÁ NOTIFICAMOS ESTE ESTOQUE GLOBALMENTE (qualquer aba)?
       if (wasAlreadyNotified(currentStockKey)) {
-        console.log(`⏭️ Estoque ${currentStockKey} JÁ notificado anteriormente. Pulando.`);
+        console.log(`⏭️ Estoque ${currentStockKey} JÁ notificado anteriormente (global). Pulando.`);
+        lastProcessedStockTimestamp.current = currentStockTimestamp; // Atualiza ref para não checar novamente
         return;
       }
+
+      // NOVO ESTOQUE - Marca como processado ANTES de fazer qualquer coisa
+      console.log("🆕 Novo estoque detectado!", { anterior: lastProcessedStockTimestamp.current, novo: currentStockTimestamp });
+      lastProcessedStockTimestamp.current = currentStockTimestamp;
       
       // CHECAGEM 3: HÁ MATCH COM A SELEÇÃO *ATUAL*?
-      // Lê a seleção FRESCA do localStorage
       let freshSelectedItems: Set<string>;
       try {
         const freshSavedList = localStorage.getItem(NOTIFY_LIST_KEY);
@@ -154,7 +152,7 @@ export default function NotificationManager() {
       }
 
       if (freshSelectedItems.size === 0) {
-          console.log("Seleção ficou vazia. Pulando match.");
+          console.log("Seleção vazia. Pulando match.");
           return;
       }
 
@@ -166,56 +164,21 @@ export default function NotificationManager() {
         }
       }
 
-      // NOTIFICAR E MARCAR
+      // NOTIFICAR E MARCAR (marca ANTES de tocar para evitar race condition)
       if (matchedFruits.length > 0) {
+        addNotifiedStock(currentStockKey); // Marca PRIMEIRO
         console.log("🔔 Tocando notificação para:", matchedFruits);
-        playNotificationSound(); // Chama a função estável
-        addNotifiedStock(currentStockKey); // Marca como notificado
+        playNotificationSound(); // Toca DEPOIS
       } else {
         console.log("❌ Nenhuma fruta selecionada encontrada neste novo estoque.");
       }
     } catch (error) {
       console.error("Erro ao verificar estoque:", error);
     }
-  }, [playNotificationSound]); // Depende da função 'playNotificationSound'
+  }, [playNotificationSound]);
 
 
-  // --- 4. useEffect DE MONITORAMENTO (TIMER DE 30s) ---
-  // (Este é o timer de segurança, caso o Broadcast falhe)
-  useEffect(() => {
-    // Lê a lista do storage para decidir se inicia o timer
-    let currentSelectedFruits: Set<string>;
-    try {
-      const savedList = localStorage.getItem(NOTIFY_LIST_KEY);
-      currentSelectedFruits = new Set<string>(savedList ? JSON.parse(savedList) as string[] : []);
-    } catch (e) {
-      currentSelectedFruits = new Set();
-    }
-    
-    // Se áudio bloqueado OU lista vazia, para tudo
-    if (!audioUnlocked || currentSelectedFruits.size === 0) {
-      console.log("Notificações em espera (Timer):", { audioUnlocked, listaVazia: currentSelectedFruits.size === 0 });
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      return;
-    }
-
-    console.log("🚀 Iniciando/Reiniciando monitoramento de estoque (Timer 30s)...");
-
-    // Verifica imediatamente ao (re)iniciar o monitoramento
-    checkStockChanges(); 
-    // Depois verifica a cada 30 segundos
-    intervalRef.current = setInterval(checkStockChanges, 30000);
-
-    // Função de limpeza do monitoramento
-    return () => {
-        console.log("🛑 Parando monitoramento de estoque (Timer 30s).");
-        if (intervalRef.current) clearInterval(intervalRef.current);
-    }
-  // Re-executa se o áudio for desbloqueado, a seleção (state) mudar, ou a função de checagem for recriada
-  }, [audioUnlocked, selectedFruitsState, checkStockChanges]); 
-
-
-  // --- 5. NOVO useEffect: Ouvinte do BroadcastChannel ---
+  // --- 4. NOVO useEffect: Ouvinte ÚNICO do BroadcastChannel ---
   // (Dispara a checagem IMEDIATAMENTE ao receber o "aviso" da page.tsx)
   useEffect(() => {
     // Só ouve se o áudio estiver desbloqueado
@@ -224,14 +187,29 @@ export default function NotificationManager() {
       return;
     }
 
+    // Lê a lista do storage para decidir se inicia o listener
+    let currentSelectedFruits: Set<string>;
+    try {
+      const savedList = localStorage.getItem(NOTIFY_LIST_KEY);
+      currentSelectedFruits = new Set<string>(savedList ? JSON.parse(savedList) as string[] : []);
+    } catch (e) {
+      currentSelectedFruits = new Set();
+    }
+    
+    // Se lista vazia, não precisa ouvir
+    if (currentSelectedFruits.size === 0) {
+      console.log("Notificações em espera (lista vazia).");
+      return;
+    }
+
     const channel = new BroadcastChannel('stock-update-channel');
 
     const handleMessage = (event: MessageEvent) => {
         console.log("🔔 Ping recebido do page.tsx!", event.data);
-        // Roda a checagem!
-        // A lógica de 'lastProcessedStockTimestamp.current' dentro dela
-        // garante que o estoque não seja processado duas vezes.
-        checkStockChanges();
+        // Pequeno delay para garantir que a API já respondeu
+        setTimeout(() => {
+          checkStockChanges();
+        }, 500);
     };
 
     console.log("🎧 Ouvindo o canal 'stock-update-channel'...");
@@ -243,7 +221,7 @@ export default function NotificationManager() {
         channel.removeEventListener('message', handleMessage);
         channel.close();
     };
-  }, [checkStockChanges, audioUnlocked]); // Depende da função e do estado do áudio
+  }, [checkStockChanges, audioUnlocked, selectedFruitsState]); // Depende da função, áudio e seleção
 
 
   // --- (O restante das funções de UI - Sem alteração) ---
