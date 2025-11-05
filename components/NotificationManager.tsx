@@ -8,9 +8,7 @@ interface ApiResponse { reportedAt: number; nextUpdateAt: number; seeds: ShopIte
 
 const NOTIFY_LIST_KEY = "pvbNotifyList";
 const NOTIFIED_STOCKS_KEY = "pvbNotifiedStocks";
-const LAST_CHECK_KEY = "pvbLastCheckTimestamp";
 const MAX_HISTORY = 100;
-const DEBOUNCE_TIME = 5000; // 5 segundos de debounce entre verificações
 
 // Lista atualizada com Starfruit no topo
 const AVAILABLE_SEEDS = [
@@ -40,7 +38,7 @@ const addNotifiedStock = (stockKey: string): void => {
     const historyArray = Array.from(historySet);
     const trimmedHistory = historyArray.slice(-MAX_HISTORY);
     localStorage.setItem(NOTIFIED_STOCKS_KEY, JSON.stringify(trimmedHistory));
-    console.log("💾 Histórico atualizado. Total de stocks notificados:", trimmedHistory.length);
+    console.log("💾 Histórico atualizado. Stock adicionado:", stockKey);
   } catch (error) { 
     console.error("Erro ao salvar histórico:", error); 
   }
@@ -48,42 +46,7 @@ const addNotifiedStock = (stockKey: string): void => {
 
 const wasAlreadyNotified = (stockKey: string): boolean => {
   const history = getNotifiedStocks();
-  const result = history.has(stockKey);
-  if (result) {
-    console.log(`✅ Stock ${stockKey} JÁ foi notificado anteriormente`);
-  }
-  return result;
-};
-
-// Sistema de debounce para evitar verificações múltiplas
-const getLastCheckTime = (): number => {
-  try {
-    const saved = localStorage.getItem(LAST_CHECK_KEY);
-    return saved ? parseInt(saved, 10) : 0;
-  } catch {
-    return 0;
-  }
-};
-
-const setLastCheckTime = (timestamp: number): void => {
-  try {
-    localStorage.setItem(LAST_CHECK_KEY, timestamp.toString());
-  } catch (error) {
-    console.error("Erro ao salvar timestamp:", error);
-  }
-};
-
-const canCheckNow = (): boolean => {
-  const now = Date.now();
-  const lastCheck = getLastCheckTime();
-  const timeSinceLastCheck = now - lastCheck;
-  
-  if (timeSinceLastCheck < DEBOUNCE_TIME) {
-    console.log(`⏳ Debounce ativo. Última verificação há ${Math.floor(timeSinceLastCheck / 1000)}s`);
-    return false;
-  }
-  
-  return true;
+  return history.has(stockKey);
 };
 
 export default function NotificationManager() {
@@ -95,8 +58,8 @@ export default function NotificationManager() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastProcessedStockTimestamp = useRef<number>(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isCheckingRef = useRef<boolean>(false); // Lock para evitar verificações simultâneas
-  const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
+  const isCheckingRef = useRef<boolean>(false);
+  const soundPlayedForStock = useRef<Set<string>>(new Set()); // NOVO: Controle adicional
 
   // Carregar seleções ao montar
   useEffect(() => {
@@ -146,7 +109,13 @@ export default function NotificationManager() {
     };
   }, [audioUnlocked]);
 
-  const playNotificationSound = useCallback(() => {
+  const playNotificationSound = useCallback((stockKey: string) => {
+    // VERIFICAÇÃO CRÍTICA: Se já tocou para este stock, não toca de novo
+    if (soundPlayedForStock.current.has(stockKey)) {
+      console.log("🔇 Som já foi tocado para este stock:", stockKey);
+      return;
+    }
+
     if (!audioRef.current) return;
     if (!audioUnlocked) { 
       console.warn("⚠️ Áudio bloqueado pelo navegador"); 
@@ -154,7 +123,11 @@ export default function NotificationManager() {
       return; 
     }
     
-    console.log("🔊 Tocando notificação sonora..."); 
+    console.log("🔊 Tocando notificação sonora para stock:", stockKey); 
+    
+    // Marca que o som foi tocado ANTES de tocar
+    soundPlayedForStock.current.add(stockKey);
+    
     audioRef.current.currentTime = 0;
     const playPromise = audioRef.current.play();
     
@@ -162,7 +135,9 @@ export default function NotificationManager() {
       playPromise
         .then(() => console.log("✅ Som reproduzido com sucesso!"))
         .catch((error) => { 
-          console.warn("❌ Falha ao reproduzir som:", error); 
+          console.warn("❌ Falha ao reproduzir som:", error);
+          // Remove da lista se falhou
+          soundPlayedForStock.current.delete(stockKey);
           setAudioUnlocked(false); 
           setShowAudioBanner(true); 
         }); 
@@ -170,15 +145,9 @@ export default function NotificationManager() {
   }, [audioUnlocked]);
 
   const checkStockChanges = useCallback(async () => {
-    // 🔒 Lock: Impede verificações simultâneas
+    // Lock para evitar verificações simultâneas
     if (isCheckingRef.current) {
       console.log("🔒 Verificação já em andamento, pulando...");
-      return;
-    }
-
-    // ⏳ Debounce: Impede verificações muito frequentes
-    if (!canCheckNow()) {
-      console.log("⏳ Debounce ativo, pulando verificação");
       return;
     }
 
@@ -202,7 +171,7 @@ export default function NotificationManager() {
         ultimoProcessado: lastProcessedStockTimestamp.current
       });
 
-      // Verifica se é um novo stock
+      // Se é o mesmo stock, ignora completamente
       if (currentStockTimestamp === lastProcessedStockTimestamp.current) {
         console.log("ℹ️ Stock não mudou, mantendo o atual");
         return;
@@ -213,18 +182,17 @@ export default function NotificationManager() {
         novo: currentStockTimestamp 
       });
 
-      // Verifica se já foi notificado ANTES de atualizar o timestamp
-      if (wasAlreadyNotified(currentStockKey)) {
-        console.log(`⏭️ Stock ${currentStockKey} já foi notificado anteriormente. Pulando som.`);
-        // Atualiza o timestamp mesmo assim para não verificar novamente
-        lastProcessedStockTimestamp.current = currentStockTimestamp;
-        setLastCheckTime(Date.now());
+      // Atualiza o timestamp imediatamente
+      lastProcessedStockTimestamp.current = currentStockTimestamp;
+
+      // VERIFICAÇÃO CRÍTICA: Se já foi notificado OU já tocou som, para aqui
+      if (wasAlreadyNotified(currentStockKey) || soundPlayedForStock.current.has(currentStockKey)) {
+        console.log(`⏭️ Stock ${currentStockKey} já foi processado. Ignorando.`);
         return;
       }
 
-      // Atualiza o timestamp e debounce
-      lastProcessedStockTimestamp.current = currentStockTimestamp;
-      setLastCheckTime(Date.now());
+      // Marca como notificado IMEDIATAMENTE
+      addNotifiedStock(currentStockKey);
       
       // Pega lista atualizada do localStorage
       let freshSelectedItems: Set<string>;
@@ -240,8 +208,6 @@ export default function NotificationManager() {
 
       if (freshSelectedItems.size === 0) {
         console.log("ℹ️ Nenhuma fruta selecionada para notificação");
-        // Mesmo sem seleção, marca como processado para não verificar de novo
-        addNotifiedStock(currentStockKey);
         return;
       }
 
@@ -255,14 +221,11 @@ export default function NotificationManager() {
         }
       }
 
-      // Marca como notificado ANTES de tocar o som
-      addNotifiedStock(currentStockKey);
-
       if (matchedFruits.length > 0) {
         console.log("🎯 MATCH! Frutas encontradas:", matchedFruits);
         
-        // Toca o som
-        playNotificationSound();
+        // Toca o som UMA ÚNICA VEZ
+        playNotificationSound(currentStockKey);
         
         console.log("✅ Notificação enviada para:", matchedFruits.join(", "));
       } else {
@@ -322,42 +285,7 @@ export default function NotificationManager() {
     }
   }, [audioUnlocked, selectedFruitsState, checkStockChanges]);
 
-  // BroadcastChannel para detectar atualizações da página principal
-  useEffect(() => {
-    if (!audioUnlocked) {
-      console.log("📡 BroadcastChannel em espera (áudio bloqueado)");
-      return;
-    }
-
-    try {
-      broadcastChannelRef.current = new BroadcastChannel('stock-update-channel');
-
-      const handleMessage = (event: MessageEvent) => {
-        console.log("📡 Broadcast recebido do page.tsx:", event.data);
-        
-        // Usa debounce para evitar múltiplas chamadas
-        if (canCheckNow()) {
-          checkStockChanges();
-        } else {
-          console.log("⏳ Broadcast ignorado (debounce ativo)");
-        }
-      };
-
-      console.log("📡 BroadcastChannel ativo, escutando...");
-      broadcastChannelRef.current.addEventListener('message', handleMessage);
-      
-      return () => {
-        console.log("📡 BroadcastChannel desativado");
-        if (broadcastChannelRef.current) {
-          broadcastChannelRef.current.removeEventListener('message', handleMessage);
-          broadcastChannelRef.current.close();
-          broadcastChannelRef.current = null;
-        }
-      };
-    } catch (error) {
-      console.error("Erro ao configurar BroadcastChannel:", error);
-    }
-  }, [checkStockChanges, audioUnlocked]);
+  // BroadcastChannel REMOVIDO - era fonte de duplicação
 
   const toggleFruitSelection = (fruitName: string) => { 
     let currentSelected: Set<string>;
@@ -416,12 +344,11 @@ export default function NotificationManager() {
         const currentStockTimestamp = data.reportedAt;
         const currentStockKey = String(currentStockTimestamp);
         
-        // Marca o stock atual como já processado (sem tocar som)
-        if (!wasAlreadyNotified(currentStockKey)) {
-          addNotifiedStock(currentStockKey);
-          lastProcessedStockTimestamp.current = currentStockTimestamp;
-          console.log("✅ Stock atual marcado como processado:", currentStockKey);
-        }
+        // Marca o stock atual como já processado
+        addNotifiedStock(currentStockKey);
+        soundPlayedForStock.current.add(currentStockKey);
+        lastProcessedStockTimestamp.current = currentStockTimestamp;
+        console.log("✅ Stock atual marcado como processado:", currentStockKey);
       }
     } catch (error) {
       console.error("Erro ao marcar estoque atual:", error);
@@ -443,9 +370,22 @@ export default function NotificationManager() {
   return (
     <>
       {showAudioBanner && !audioUnlocked && (
-        <div className="audio-banner" onClick={primeAudioOnClick}>
-          <Bell size={20} />
-          <span>Clique aqui para ativar as notificações sonoras</span>
+        <div className="audio-banner-overlay">
+          <div className="audio-banner-card">
+            <div className="audio-banner-icon">
+              <Bell size={32} />
+            </div>
+            <div className="audio-banner-content">
+              <h3 className="audio-banner-title">Ativar Notificações</h3>
+              <p className="audio-banner-description">
+                Receba alertas sonoros quando suas sementes favoritas aparecerem no estoque
+              </p>
+            </div>
+            <button className="audio-banner-button" onClick={primeAudioOnClick}>
+              <Bell size={18} />
+              <span>Ativar Agora</span>
+            </button>
+          </div>
         </div>
       )}
       
