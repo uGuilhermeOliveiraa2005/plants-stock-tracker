@@ -73,13 +73,17 @@ export default function HomePage() {
 
       setApiData(data);
       
+      // --- MODIFICAÇÃO CHAVE ---
+      // Agora enviamos o objeto 'data' COMPLETO, não apenas um ping.
       try {
         const channel = new BroadcastChannel('stock-update-channel');
-        channel.postMessage({ reportedAt: data.reportedAt });
+        channel.postMessage(data); // Enviando o payload completo
         channel.close();
+        console.log("📡 Dados de estoque enviados via BroadcastChannel.");
       } catch (e) {
         console.warn("Falha ao enviar broadcast message", e);
       }
+      // --- FIM DA MODIFICAÇÃO ---
 
       const duration = data.nextUpdateAt - data.reportedAt;
       setTotalDuration(duration);

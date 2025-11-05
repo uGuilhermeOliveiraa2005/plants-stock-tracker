@@ -93,7 +93,7 @@ export default function NotificationManager() {
   }, [audioUnlocked]); // Depende apenas de 'audioUnlocked'
 
 
-  // --- 2. FUNÇÃO DE SOM (Envolvida em useCallback) ---
+  // --- 2. FUNÇÃO DE SOM (Sem alteração) ---
   const playNotificationSound = useCallback(() => {
       if (!audioRef.current) return;
       if (!audioUnlocked) { 
@@ -115,12 +115,9 @@ export default function NotificationManager() {
   }, [audioUnlocked]); // Depende do state 'audioUnlocked'
 
   
-  // --- 3. LÓGICA DE CHECAGEM (Movida para fora e envolvida em useCallback) ---
-  const checkStockChanges = useCallback(async () => {
+  // --- 3. NOVA LÓGICA DE PROCESSAMENTO (Recebe dados, não busca) ---
+  const processStockData = useCallback((data: ApiResponse) => {
     try {
-      const response = await fetch("/api/stock");
-      if (!response.ok) { console.warn("Falha /api/stock"); return; }
-      const data: ApiResponse = await response.json();
       const currentStockTimestamp = data.reportedAt;
       const currentStockKey = String(currentStockTimestamp);
 
@@ -173,13 +170,13 @@ export default function NotificationManager() {
         console.log("❌ Nenhuma fruta selecionada encontrada neste novo estoque.");
       }
     } catch (error) {
-      console.error("Erro ao verificar estoque:", error);
+      console.error("Erro ao processar estoque:", error);
     }
-  }, [playNotificationSound]);
+  }, [playNotificationSound]); // Depende da função de tocar som
 
 
-  // --- 4. NOVO useEffect: Ouvinte ÚNICO do BroadcastChannel ---
-  // (Dispara a checagem IMEDIATAMENTE ao receber o "aviso" da page.tsx)
+  // --- 4. useEffect: Ouvinte do BroadcastChannel (Modificado) ---
+  // (Dispara o PROCESSAMENTO IMEDIATAMENTE ao receber os DADOS da page.tsx)
   useEffect(() => {
     // Só ouve se o áudio estiver desbloqueado
     if (!audioUnlocked) {
@@ -204,12 +201,17 @@ export default function NotificationManager() {
 
     const channel = new BroadcastChannel('stock-update-channel');
 
-    const handleMessage = (event: MessageEvent) => {
-        console.log("🔔 Ping recebido do page.tsx!", event.data);
-        // Pequeno delay para garantir que a API já respondeu
-        setTimeout(() => {
-          checkStockChanges();
-        }, 500);
+    // Agora esperamos o payload completo da ApiResponse
+    const handleMessage = (event: MessageEvent<ApiResponse>) => {
+        console.log("🔔 Dados de estoque recebidos!", event.data?.reportedAt);
+        
+        const stockData = event.data;
+        if (stockData && stockData.reportedAt) {
+          // Sem delay! Processa imediatamente.
+          processStockData(stockData);
+        } else {
+          console.warn("Mensagem de broadcast recebida sem dados válidos.");
+        }
     };
 
     console.log("🎧 Ouvindo o canal 'stock-update-channel'...");
@@ -221,7 +223,8 @@ export default function NotificationManager() {
         channel.removeEventListener('message', handleMessage);
         channel.close();
     };
-  }, [checkStockChanges, audioUnlocked, selectedFruitsState]); // Depende da função, áudio e seleção
+  // Depende da nova função de processamento, áudio e seleção
+  }, [processStockData, audioUnlocked, selectedFruitsState]); 
 
 
   // --- (O restante das funções de UI - Sem alteração) ---
@@ -266,6 +269,7 @@ export default function NotificationManager() {
     console.log("💾 Modal Salvo (storage já foi atualizado ao clicar).");
     
     // Marca o estoque atual como já processado para não notificar imediatamente
+    // Esta lógica está CORRETA e cumpre o seu requisito
     try {
       const response = await fetch("/api/stock");
       if (response.ok) {
