@@ -62,6 +62,29 @@ export default function HomePage() {
       }
       const data: ApiResponse = await response.json();
 
+      // --- 💡 CORREÇÃO ADICIONADA ---
+      // Verificamos se os dados recebidos são os mesmos que já temos no estado.
+      // Se o 'reportedAt' for idêntico, significa que a API/cache nos retornou
+      // o estoque antigo (enquanto atualizava). Não devemos re-transmitir.
+      if (apiData && apiData.reportedAt === data.reportedAt) {
+        console.log("📡 Dados da API são os mesmos do estado atual. Pulando broadcast.");
+        
+        // Apenas re-configuramos o timer local e saímos.
+        const duration = data.nextUpdateAt - data.reportedAt;
+        setTotalDuration(duration);
+        const now = Date.now();
+        const remaining = data.nextUpdateAt - now;
+        setTimeRemaining(remaining > 0 ? remaining : 0);
+        
+        // Importante para garantir que os 'spinners' de loading parem
+        setIsLoading(false);
+        setIsRefreshing(false);
+        return; // Sai da função para evitar o broadcast
+      }
+      // --- FIM DA CORREÇÃO ---
+
+      // Se chegamos aqui, os dados são genuinamente novos (novo reportedAt)
+
       data.seeds.sort((a, b) => {
         let indexA = SEEDS_ORDER.indexOf(a.name);
         let indexB = SEEDS_ORDER.indexOf(b.name);
@@ -71,15 +94,14 @@ export default function HomePage() {
       });
       data.gear.sort((a, b) => a.name.localeCompare(b.name));
 
-      setApiData(data);
+      setApiData(data); // Define os novos dados no estado
       
-      // --- MODIFICAÇÃO CHAVE ---
-      // Agora enviamos o objeto 'data' COMPLETO, não apenas um ping.
+      // --- MODIFICAÇÃO CHAVE (Agora só envia dados novos) ---
       try {
         const channel = new BroadcastChannel('stock-update-channel');
         channel.postMessage(data); // Enviando o payload completo
         channel.close();
-        console.log("📡 Dados de estoque enviados via BroadcastChannel.");
+        console.log("📡 Dados de ESTOQUE NOVO enviados via BroadcastChannel.");
       } catch (e) {
         console.warn("Falha ao enviar broadcast message", e);
       }
@@ -106,7 +128,7 @@ export default function HomePage() {
     if (timeRemaining <= 0 && apiData) {
       const timer = setTimeout(() => {
         fetchStockData();
-      }, 2000);
+      }, 2000); // Continua verificando a cada 2 segundos
       return () => clearTimeout(timer);
     }
     
@@ -118,7 +140,7 @@ export default function HomePage() {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [timeRemaining, apiData]);
+  }, [timeRemaining, apiData]); // apiData está aqui para re-trigger se mudar
 
   const formatTime = (ms: number): string => {
     const totalSeconds = Math.floor(ms / 1000);
