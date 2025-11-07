@@ -406,6 +406,43 @@ section + section {
    ESTILOS DE NOTIFICAÇÃO
    ======================================== */
 
+/* Banner de Áudio */
+.audio-banner {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  z-index: 9999;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  animation: slideDown 0.5s ease;
+}
+
+.audio-banner:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* Botão de Ícone no Navbar */
 .nav-icon-btn {
   display: flex;
@@ -419,32 +456,12 @@ section + section {
   color: var(--text-color-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  position: relative;
 }
 
 .nav-icon-btn:hover {
   background-color: rgba(var(--accent-color-rgb), 0.1);
   border-color: var(--accent-color);
   color: var(--accent-color);
-}
-
-/* Badge de notificação no ícone do sino */
-.notification-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: #ef4444;
-  color: white;
-  font-size: 10px;
-  font-weight: bold;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px;
-  border: 2px solid var(--card-color);
 }
 
 /* Modal Overlay */
@@ -686,6 +703,13 @@ section + section {
     font-size: 0.9rem;
   }
 
+  /* Ajustes do sistema de notificação no mobile */
+  .audio-banner {
+    top: 60px;
+    font-size: 0.9rem;
+    padding: 0.625rem 1.25rem;
+  }
+
   .modal-content {
     max-width: 100%;
     margin: 0;
@@ -708,7 +732,30 @@ section + section {
   }
 }
 
-/* Animação de refresh */
+/* Badge de notificação no ícone do sino */
+.nav-icon-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 2px solid var(--bg-primary, #1a1a1a);
+}
+
+/* Adicione esta regra de keyframes */
 @keyframes spin-slow {
   from {
     transform: rotate(0deg);
@@ -718,10 +765,12 @@ section + section {
   }
 }
 
+/* Aplique a animação ao ícone */
 .spin-slow {
   animation: spin-slow 2s linear infinite;
 }
 
+/* Opcional: Estilo para a mensagem de refresh */
 .message-refreshing {
   margin-bottom: 2rem; 
   font-size: 1.2rem;
