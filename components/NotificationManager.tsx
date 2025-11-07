@@ -118,7 +118,7 @@ export default function NotificationManager() {
         return;
       }
 
-      // NOVO ESTOQUE - Marca como processado LOCALMENTE (ref)
+      // NOVO ESTOQUE - Marca como processado ANTES de fazer qualquer coisa
       console.log("🆕 Novo estoque detectado!", { anterior: lastProcessedStockTimestamp.current, novo: currentStockTimestamp });
       lastProcessedStockTimestamp.current = currentStockTimestamp;
       
@@ -134,8 +134,6 @@ export default function NotificationManager() {
 
       if (freshSelectedItems.size === 0) {
           console.log("Seleção vazia. Pulando match.");
-          // IMPORTANTE: Marca como processado globalmente MESMO sem match
-          addNotifiedStock(currentStockKey);
           return;
       }
 
@@ -148,15 +146,13 @@ export default function NotificationManager() {
         }
       }
 
-      // SEMPRE marca como processado globalmente ANTES de qualquer ação
-      addNotifiedStock(currentStockKey);
-      
-      // NOTIFICAR apenas se houver match
+      // NOTIFICAR E MARCAR (marca ANTES de tocar para evitar race condition)
       if (matchedFruits.length > 0) {
+        addNotifiedStock(currentStockKey); // Marca PRIMEIRO
         console.log("🔔 Tocando notificação para:", matchedFruits);
-        playNotificationSound();
+        playNotificationSound(); // Toca DEPOIS
       } else {
-        console.log("❌ Nenhuma fruta selecionada encontrada neste estoque.");
+        console.log("❌ Nenhuma fruta selecionada encontrada neste novo estoque.");
       }
     } catch (error) {
       console.error("Erro ao processar estoque:", error);
