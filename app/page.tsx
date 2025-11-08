@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Sprout, Wrench, RotateCw } from "lucide-react";
+import WeatherSection from "@/components/WeatherSection";
 
 interface ShopItem {
   name: string;
@@ -73,17 +74,14 @@ export default function HomePage() {
 
       setApiData(data);
       
-      // --- MODIFICAÇÃO CHAVE ---
-      // Agora enviamos o objeto 'data' COMPLETO, não apenas um ping.
       try {
         const channel = new BroadcastChannel('stock-update-channel');
-        channel.postMessage(data); // Enviando o payload completo
+        channel.postMessage(data);
         channel.close();
         console.log("📡 Dados de estoque enviados via BroadcastChannel.");
       } catch (e) {
         console.warn("Falha ao enviar broadcast message", e);
       }
-      // --- FIM DA MODIFICAÇÃO ---
 
       const duration = data.nextUpdateAt - data.reportedAt;
       setTotalDuration(duration);
@@ -141,6 +139,9 @@ export default function HomePage() {
         <h1>Plants vs Brainrots</h1>
         <p>Monitor de Estoque da Loja</p>
       </header>
+
+      {/* NOVA SEÇÃO DE WEATHER */}
+      <WeatherSection />
 
       <section className="timer-section">
         <h2>Próxima atualização em:</h2>
