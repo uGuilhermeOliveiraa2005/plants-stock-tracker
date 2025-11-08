@@ -140,9 +140,6 @@ export default function HomePage() {
         <p>Monitor de Estoque da Loja</p>
       </header>
 
-      {/* NOVA SEÇÃO DE WEATHER */}
-      <WeatherSection />
-
       <section className="timer-section">
         <h2>Próxima atualização em:</h2>
         <div className="timer-countdown">
