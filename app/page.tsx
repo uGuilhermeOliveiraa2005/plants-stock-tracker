@@ -255,6 +255,9 @@ export default function HomePage() {
           )}
         </section>
       )}
+
+      {/* SEÇÃO DE WEATHER - APÓS EQUIPAMENTOS */}
+      <WeatherSection />
     </main>
   );
 }
